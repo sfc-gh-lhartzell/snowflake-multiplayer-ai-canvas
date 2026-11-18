@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { CocoArt, CocoFace, PixelKindIcon } from "@/components/coco/Coco";
+import { CocoArt, PixelKindIcon } from "@/components/coco/Coco";
+import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/cn";
 import { displayName } from "@/lib/colors";
 import type { DocKind, DocMetaClient } from "./types";
@@ -31,12 +32,16 @@ export function KindIcon({ kind, size = 30 }: { kind: DocKind; size?: number }) 
 export function DocRail({
   docs,
   activeId,
+  viewers,
+  me,
   onOpen,
   onCreate,
   onArchive,
 }: {
   docs: DocMetaClient[];
   activeId: string | null;
+  viewers: Record<string, string[]>;
+  me: string;
   onOpen: (d: DocMetaClient) => void;
   onCreate: (kind: DocKind) => void;
   onArchive: (d: DocMetaClient) => void;
@@ -100,9 +105,11 @@ export function DocRail({
                 <span className={cn("block truncate text-[13px] font-semibold", d.docId === activeId && "text-[color:var(--color-accent-emphasis)]")}>
                   {d.title}
                 </span>
-                <span className="flex items-center gap-1 truncate text-[11px] text-[color:var(--color-text-muted)]">
-                  {d.createdBy === "LUKE" ? <span aria-label="Made by Luke" title="Made by Luke"><CocoFace size={12} /></span> : null}
-                  {KIND_META[d.kind].label} · {d.updatedBy ? displayName(d.updatedBy === "LUKE" ? "Luke" : d.updatedBy) : ""}
+                <span className="flex items-center gap-1.5 truncate text-[11px] text-[color:var(--color-text-muted)]">
+                  <span className="truncate">
+                    {KIND_META[d.kind].label} · {d.updatedBy ? displayName(d.updatedBy === "LUKE" ? "Luke" : d.updatedBy) : ""}
+                  </span>
+                  <Here users={(viewers[d.docId] ?? []).filter((u) => u !== me)} />
                 </span>
               </span>
             </button>
@@ -119,5 +126,21 @@ export function DocRail({
         ))}
       </div>
     </nav>
+  );
+}
+
+/** Initials of the people who have this doc open right now. */
+function Here({ users }: { users: string[] }) {
+  if (!users.length) return null;
+  const shown = users.slice(0, 3);
+  return (
+    <span className="ml-auto flex shrink-0 -space-x-1.5" aria-label={`Open now: ${users.map(displayName).join(", ")}`}>
+      {shown.map((u) => (
+        <Avatar key={u} name={u} size={18} title={`${displayName(u)} is here`} />
+      ))}
+      {users.length > shown.length ? (
+        <span className="inline-flex h-[18px] items-center rounded-full px-1 text-[9.5px] font-bold">+{users.length - shown.length}</span>
+      ) : null}
+    </span>
   );
 }

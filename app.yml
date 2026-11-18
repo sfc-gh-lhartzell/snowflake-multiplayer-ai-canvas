@@ -13,6 +13,12 @@ ignore:
   - .next
   - .git
   - .env*
+  # local dev key pair and scratch data: never upload
+  - .dev-keys
+  - .data
+  - "**/*.p8"
+  - "**/*.pem"
+  - "*.tsbuildinfo"
   - "**/.DS_Store"
   - server.js
   - assets

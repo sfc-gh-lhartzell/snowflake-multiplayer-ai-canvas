@@ -369,7 +369,10 @@ export function validateProposedSql(sql: string): string | null {
  * teammate who clicked Approve. Local dev: the dev service user's role.
  */
 export async function runApprovedSql(sql: string, req: IncomingMessage | Request) {
-  const deployedCaller = Boolean(getServiceToken() && getCallerToken(req));
+  const deployed = Boolean(getServiceToken());
+  const deployedCaller = deployed && Boolean(getCallerToken(req));
+  // Deployed, approved SQL runs only as the approver. Never fall back to the app role.
+  if (deployed && !deployedCaller) throw new Error("Approver identity missing; refusing to run as the app role.");
   const c = deployedCaller ? await callerConnection(req) : await conn();
   try {
     const rows = await executeAsync<Record<string, unknown>>(c, sql.trim().replace(/;\s*$/, ""));

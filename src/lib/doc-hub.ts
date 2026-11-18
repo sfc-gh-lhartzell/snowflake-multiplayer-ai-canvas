@@ -18,6 +18,7 @@ import {
   removeAwarenessStates,
 } from "y-protocols/awareness";
 import { getDoc, saveDocState, addVersion, type DocFull } from "./docs-store";
+import { publish } from "./canvas-bus";
 
 const SAVE_DEBOUNCE_MS = 1500;
 const VERSION_EVERY_MS = 60_000;
@@ -181,6 +182,7 @@ export function connect(room: Room, connId: string, user: string, send: Send): v
     room.unloadTimer = null;
   }
   room.conns.set(connId, { send, user, clientIds: new Set() });
+  announceViewers(room);
   const states = Array.from(room.awareness.getStates().keys());
   send({
     t: "sync",
@@ -194,6 +196,7 @@ export function connect(room: Room, connId: string, user: string, send: Send): v
 export function disconnect(room: Room, connId: string): void {
   const c = room.conns.get(connId);
   room.conns.delete(connId);
+  announceViewers(room);
   if (c && c.clientIds.size) removeAwarenessStates(room.awareness, Array.from(c.clientIds), "server");
   if (room.conns.size === 0) {
     room.unloadTimer = setTimeout(async () => {
@@ -226,6 +229,31 @@ export function claimSeed(room: Room): string | null {
 
 export function roomMeta(room: Room): DocFull {
   return room.meta;
+}
+
+function viewersOf(room: Room): string[] {
+  return Array.from(new Set(Array.from(room.conns.values(), (c) => c.user))).sort();
+}
+
+/** Tell the canvas who has this doc open, so the doc list can show their initials. */
+function announceViewers(room: Room) {
+  publish(room.meta.canvasId, {
+    type: "doc.viewers",
+    canvasId: room.meta.canvasId,
+    payload: { docId: room.docId, users: viewersOf(room) },
+    at: Date.now(),
+  });
+}
+
+/** docId -> users with it open, for every loaded doc in a canvas. Sent to each canvas joiner. */
+export function docViewers(canvasId: string): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const room of hub().rooms.values()) {
+    if (room.meta.canvasId !== canvasId) continue;
+    const users = viewersOf(room);
+    if (users.length) out[room.docId] = users;
+  }
+  return out;
 }
 
 export function setRoomTitle(docId: string, title: string) {

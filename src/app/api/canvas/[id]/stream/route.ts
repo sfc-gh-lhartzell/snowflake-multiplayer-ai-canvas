@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { subscribe, publish, markPresent, markAbsent, presentUsers } from "@/lib/canvas-bus";
 import { getCallerIdentity } from "@/lib/auth";
+import { docViewers } from "@/lib/doc-hub";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +59,7 @@ export async function GET(
       // The presence.state above went out before this connection subscribed,
       // so send the joiner their own copy.
       send({ type: "presence.state", canvasId, payload: { users: presentUsers(canvasId) }, at: Date.now() });
+      send({ type: "doc.viewers.state", canvasId, payload: { viewers: docViewers(canvasId) }, at: Date.now() });
 
       // 5. heartbeat (comment line keeps proxy connections alive)
       const heartbeat = setInterval(() => {

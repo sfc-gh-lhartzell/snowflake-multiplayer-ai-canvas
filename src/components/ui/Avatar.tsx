@@ -21,7 +21,7 @@ export function Avatar({
   const initials = pickInitials(name);
   const style =
     variant === "person"
-      ? { width: size, height: size, background: userColor(name), color: "#fff" }
+      ? { width: size, height: size, background: userColor(name), color: "#fff", fontSize: size < 24 ? Math.max(8, Math.round(size * 0.45)) : undefined }
       : { width: size, height: size };
   const theme = useTheme();
   const spooky = theme === "halloween" && variant === "agent";

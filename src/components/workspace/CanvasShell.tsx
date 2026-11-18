@@ -33,6 +33,8 @@ function Shell() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [halloweenFlash, setHalloweenFlash] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // docId -> people with that doc open (from the doc hub), for initials in the rail.
+  const [viewers, setViewers] = useState<Record<string, string[]>>({});
 
   useKonami(
     useCallback(() => {
@@ -77,7 +79,12 @@ function Shell() {
   }, [activeId, loaded]);
 
   useCanvasEvent((e) => {
-    if (e.type === "doc.created") {
+    if (e.type === "doc.viewers.state") {
+      setViewers((e.payload as { viewers?: Record<string, string[]> })?.viewers ?? {});
+    } else if (e.type === "doc.viewers") {
+      const p = e.payload as { docId: string; users: string[] };
+      setViewers((v) => ({ ...v, [p.docId]: p.users }));
+    } else if (e.type === "doc.created") {
       const p = e.payload as { doc: DocMetaClient; open?: boolean; requestedBy?: string };
       setDocs((ds) => (ds.some((d) => d.docId === p.doc.docId) ? ds : [p.doc, ...ds]));
       // Luke's new doc opens for whoever asked for it; everyone else gets a card in chat.
@@ -158,7 +165,7 @@ function Shell() {
       ) : null}
       <CanvasHeader onNewSession={newSession} onLoadContext={loadContext} chatHidden={chatHidden} onShowChat={() => setChatHidden(false)} />
       <div className="flex min-h-0 flex-1 gap-5">
-        <DocRail docs={docs} activeId={activeId} onOpen={open} onCreate={create} onArchive={archive} />
+        <DocRail docs={docs} activeId={activeId} viewers={viewers} me={me} onOpen={open} onCreate={create} onArchive={archive} />
         <Workspace tabs={tabs} active={active} me={me} onSelect={open} onClose={close} onCreate={create} onNotice={toast} />
         {chatHidden ? (
           <div className="w-0" />
