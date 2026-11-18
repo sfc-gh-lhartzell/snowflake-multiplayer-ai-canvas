@@ -5,8 +5,8 @@ database: AGENT_CANVAS_PLUS
 schema: PUBLIC
 query_warehouse: AGENT_CANVAS_PLUS_WH
 
-label: Multiplayer AI canvas
-description: Shared chat with a Cortex Agent over TPC-H revenue data (caller rights).
+label: Agent Canvas Plus (Co-CoCo)
+description: Multiplayer docs, slides, and artifacts with Luke, a Cortex Agent (caller rights for approved SQL).
 
 ignore:
   - node_modules
