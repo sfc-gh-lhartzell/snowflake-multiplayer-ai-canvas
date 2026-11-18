@@ -5,6 +5,7 @@ import { Database, ShieldCheck, Check, X, LoaderCircle, Terminal, CircleCheck, C
 import { apiFetch } from "@/lib/client-api";
 import { displayName } from "@/lib/colors";
 import { cn } from "@/lib/cn";
+import { CocoArt } from "@/components/coco/Coco";
 
 export interface SqlActionView {
   actionId: string;
@@ -71,6 +72,17 @@ export function SqlApprovalCard({ action }: { action: SqlActionView }) {
           </>
         ) : (
           <div className="text-[12px] text-[color:var(--color-text-secondary)]">
+            {action.status === "approved" ? (
+              <div className="flex items-center gap-2 pb-1">
+                <CocoArt name="success" size={44} replay={false} />
+                <span className="font-semibold text-[color:var(--color-success-text)]">Landed it.</span>
+              </div>
+            ) : action.status === "failed" ? (
+              <div className="flex items-center gap-2 pb-1">
+                <CocoArt name="slip" size={44} replay={false} />
+                <span className="font-semibold text-[color:var(--color-danger-text)]">Slipped on that one.</span>
+              </div>
+            ) : null}
             {action.decidedBy ? `${statusVerb(action.status)} by ${displayName(action.decidedBy)}` : null}
             {action.result?.ranAs ? ` · ran as ${action.result.ranAs}` : null}
             {action.result?.error ? (

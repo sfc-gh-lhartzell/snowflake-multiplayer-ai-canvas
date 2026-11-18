@@ -1,17 +1,21 @@
+"use client";
+
+import { CocoFace } from "./coco/Coco";
+
+/** The CoCo penguin in a raised tile, the name, and the Co-CoCo tag. */
 export function BrandLockup() {
   return (
     <div className="flex items-center gap-2.5 select-none">
-      <span className="neu-accent inline-flex h-8 w-8 items-center justify-center rounded-[11px]" aria-hidden>
-        <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-          <g stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-            <line x1="16" y1="4" x2="16" y2="28" />
-            <line x1="5.5" y1="10" x2="26.5" y2="22" />
-            <line x1="5.5" y1="22" x2="26.5" y2="10" />
-          </g>
-        </svg>
+      <span className="neu-raised-sm inline-flex h-9 w-9 items-center justify-center rounded-[12px] bg-[color:var(--color-surface-raised)]" aria-hidden>
+        <CocoFace size={24} />
       </span>
-      <span className="text-[16px] font-bold tracking-tight text-[color:var(--color-text-primary)]">
-        Agent Canvas <span className="text-[color:var(--color-accent)]">Plus</span>
+      <span className="flex items-baseline gap-1.5 text-[16px] font-bold tracking-tight text-[color:var(--color-text-primary)]">
+        <span>
+          Agent Canvas <span className="text-[color:var(--color-accent)]">Plus</span>
+        </span>
+        <span className="neu-inset-sm rounded-full px-2 py-0.5 text-[11px] font-bold tracking-tight text-[color:var(--color-accent-emphasis)]">
+          Co-CoCo
+        </span>
       </span>
     </div>
   );

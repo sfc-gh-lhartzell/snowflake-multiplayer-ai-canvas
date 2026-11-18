@@ -33,6 +33,7 @@ import { SlidesRail } from "./Slides";
 import { VersionsDialog } from "./VersionsDialog";
 import { SlashMenu, SLASH_ITEMS, type SlashItem } from "./SlashMenu";
 import type { DocMetaClient } from "@/components/workspace/types";
+import { CocoLoading, CocoSled, CocoEmpty, CocoArt, CocoFace, useCocoQuip } from "@/components/coco/Coco";
 
 const SNAPSHOT_DEBOUNCE_MS = 2500;
 
@@ -54,20 +55,28 @@ export function RichEditor({ doc, me, onNotice }: { doc: DocMetaClient; me: stri
   });
 
   if (!session.ydoc || !session.provider || me === "…") {
-    return <div className="p-10 text-[13px] text-[color:var(--color-text-muted)]">Opening…</div>;
+    return <CocoLoading label="Sledding into the doc…" />;
   }
   return (
-    <RichEditorInner
-      key={doc.docId}
-      doc={doc}
-      me={me}
-      ydoc={session.ydoc}
-      provider={session.provider}
-      session={session}
-      pending={pending}
-      pulse={pulse}
-      onNotice={onNotice}
-    />
+    <div className="relative h-full">
+      <RichEditorInner
+        key={doc.docId}
+        doc={doc}
+        me={me}
+        ydoc={session.ydoc}
+        provider={session.provider}
+        session={session}
+        pending={pending}
+        pulse={pulse}
+        onNotice={onNotice}
+      />
+      {/* Until the first sync lands the editor is empty; sled over it instead of flashing a blank page. */}
+      {!session.synced ? (
+        <div className="absolute inset-0 z-40 bg-[color:var(--color-surface-base)]">
+          <CocoLoading label="Sledding into the doc…" />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -478,7 +487,7 @@ function RichEditorInner({
           ) : null}
           {aiBusy ? (
             <div className="neu-raised-sm fixed bottom-8 left-1/2 z-40 inline-flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color:var(--color-accent-emphasis)]">
-              <LoaderCircle className="h-4 w-4 animate-spin" /> Luke is writing…
+              <CocoSled size={34} /> Luke is writing…
             </div>
           ) : null}
         </div>
@@ -516,7 +525,7 @@ function RichEditorInner({
                 onClick={() => setAskOpen((v) => !v)}
                 className="neu-accent inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold"
               >
-                <Sparkles className="h-3.5 w-3.5" /> Ask Luke
+                <span className="inline-flex rounded-[6px] bg-[color:var(--color-surface-raised)] p-[1px]"><CocoFace size={15} /></span> Ask Luke
               </button>
               {askOpen ? (
                 <div className="neu-menu absolute left-0 top-10 z-50 w-64 p-2" onMouseDown={(e) => e.preventDefault()}>

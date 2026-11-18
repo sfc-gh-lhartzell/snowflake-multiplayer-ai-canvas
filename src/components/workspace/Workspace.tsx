@@ -1,6 +1,7 @@
 "use client";
 
-import { X, Sparkles, FileText, Presentation, CodeXml } from "lucide-react";
+import { X, FileText, Presentation, CodeXml } from "lucide-react";
+import { CocoArt } from "@/components/coco/Coco";
 import { cn } from "@/lib/cn";
 import { RichEditor } from "@/editor/RichEditor";
 import { CodeArtifactEditor } from "@/editor/CodeArtifactEditor";
@@ -79,13 +80,13 @@ function Welcome({ onCreate }: { onCreate: (k: DocKind) => void }) {
   ];
   return (
     <div className="flex h-full flex-col items-center justify-center px-8 py-12 text-center">
-      <div className="neu-raised mb-6 inline-flex h-16 w-16 items-center justify-center rounded-[22px] text-[color:var(--color-accent)]">
-        <Sparkles className="h-7 w-7" />
+      <div className="mb-3">
+        <CocoArt name="artifacts" size={128} />
       </div>
       <h1 className="text-[26px] font-bold tracking-tight">Make things together, with Luke.</h1>
       <p className="mt-2 max-w-xl text-[14.5px] leading-relaxed text-[color:var(--color-text-secondary)]">
-        Everyone here edits the same documents live. Ask <span className="font-semibold text-[color:var(--color-accent-emphasis)]">@Luke</span> in the chat to
-        draft, review, query your data, write code, or propose a SQL change for the team to approve.
+        Everyone here edits the same docs live. Ask <span className="font-semibold text-[color:var(--color-accent-emphasis)]">@Luke</span> to draft,
+        review, query data, write code, or propose SQL for the team to approve.
       </p>
       <div className="mt-8 grid w-full max-w-3xl gap-5 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
         {cards.map((c) => (

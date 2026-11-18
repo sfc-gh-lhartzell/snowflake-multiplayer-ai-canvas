@@ -8,7 +8,8 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from "react";
-import { ArrowUp, Loader2, Paperclip, Sparkles, X } from "lucide-react";
+import { ArrowUp, Paperclip, X } from "lucide-react";
+import { CocoFace } from "./coco/Coco";
 import { Avatar } from "./ui/Avatar";
 import { cn } from "@/lib/cn";
 import { useTheme } from "@/lib/use-theme";
@@ -267,7 +268,7 @@ export function Composer({
                 aria-label="Send message"
               >
                 {busy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <CocoFace size={20} mode="hop" />
                 ) : (
                   <ArrowUp className="h-4 w-4" />
                 )}
@@ -449,9 +450,9 @@ function FileSheet({
           className="flex items-center gap-1.5 rounded-[8px] neu-btn px-3 py-1.5 text-[12px] font-medium text-[color:var(--color-accent-emphasis)] hover:bg-[color:var(--color-accent-subtle)] disabled:opacity-50"
         >
           {submitting ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <CocoFace size={15} mode="hop" />
           ) : (
-            <Sparkles className="h-3.5 w-3.5" />
+            <CocoFace size={15} />
           )}
           Let Luke write it
         </button>

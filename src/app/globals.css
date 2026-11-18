@@ -554,3 +554,16 @@ html, body {
 
 /* Tooltip-ish floating menus */
 .neu-menu { background: var(--color-surface-overlay); box-shadow: var(--neu-raised-lg); border-radius: 16px; }
+
+/* ---------- CoCo sprites ---------- */
+:root { --coco-snow: #c9d6e6; --coco-snow-line: #d7e1ee; }
+[data-theme="dark"] { --coco-snow: #5b6b82; --coco-snow-line: #3a4659; }
+.coco-sled { transform: rotate(6deg); transform-origin: 50% 70%; }
+.coco-sled .coco-sled-flakes { animation: coco-flakes 0.9s linear infinite; }
+.coco-sled .coco-sled-puff { animation: coco-puff 0.6s ease-out infinite; }
+.coco-sled.coco-still .coco-sled-flakes { animation: none; }
+@keyframes coco-flakes { from { transform: translateX(0); } to { transform: translateX(-32px); } }
+@keyframes coco-puff { 0% { opacity: .9; transform: translate(0,0); } 100% { opacity: 0; transform: translate(-4px,-1px); } }
+.coco-bob { animation: coco-bob 2.4s ease-in-out infinite; }
+@keyframes coco-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .coco-sled .coco-sled-flakes, .coco-sled .coco-sled-puff, .coco-bob { animation: none; } }

@@ -31,6 +31,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { CocoFace } from "@/components/coco/Coco";
 
 export function EditorToolbar({
   editor,
@@ -190,7 +191,7 @@ export function EditorToolbar({
         <ModeToggle
           active={lukeSuggests}
           onClick={onToggleLukeSuggests}
-          icon={<Sparkles className="h-3.5 w-3.5" />}
+          icon={<CocoFace size={15} />}
           label="Luke suggests"
           title="When on, Luke's edits arrive as suggestions you accept or reject"
         />

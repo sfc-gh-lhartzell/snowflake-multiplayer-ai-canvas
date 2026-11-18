@@ -1,0 +1,82 @@
+<!-- Copyright (c) Snowflake Inc. All rights reserved. -->
+<!-- Static: frame 1 of coco-slip.svg, cropped to the sprite. Used by contextual tips. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="63" height="56" viewBox="28.9861 28.9688 63.04 56.05" fill="none">
+<g id="coco-tip" clip-path="url(#clip0_1876_17377)">
+<g id="_01_____8" opacity="1" clip-path="url(#clip1_1876_17377)">
+<g id="Group_1073712429" transform="translate(28.9861 28.9688)">
+<path id="Vector" d="M13.9958 0.0298532L36.4331 0.0238059C40.5781 0.0238059 44.8679 -0.0343423 49.003 0.0311187L49.0041 14.0249C51.3366 14.0229 53.7036 13.9995 56.0334 14.0248L56.0355 28.0166L63.0262 28.0177L63.0342 42.0528C61.4808 42.0424 59.9271 42.0414 58.3736 42.0496C57.684 42.0504 56.7014 42.0784 56.0393 42.0255L56.0396 56.0458L51.2883 56.0511C50.7132 56.0516 49.5262 56.0893 48.9887 56.0443L42.0145 56.0447C35.0588 56.1253 27.9735 56.0411 21.0043 56.0521C18.8158 55.9803 16.2292 56.0424 14.0159 56.0387C11.8478 56.0733 9.17571 56.1043 7.01662 56.0405L7.01395 42.0319C4.7359 42.1067 2.29922 42.0269 0.00219351 42.0516C0.0614388 37.5142 0.0754594 32.544 0 28.015L7.01859 28.0189L7.00995 14.0235L13.9981 14.0271L13.9958 0.0298532Z" fill="#58B2E2" stroke="#58B2E2" stroke-width="1" />
+<path id="Vector_2" transform="translate(21.0056 28.0071)" d="M7.00256 0.00878906H13.9968C16.2274 0.00773438 18.8234 0.0743203 21.022 0C20.9531 4.64105 21.0102 9.3818 21.0064 14.0314C16.0521 13.9731 11.0174 14.1015 6.05672 14.0426C4.05295 14.0188 2.0063 14.0825 0.00611544 14.0157L0 0.00421858L7.00256 0.00878906Z" fill="#FBF6E9" stroke="#FBF6E9" stroke-width="1" />
+<path id="Vector_3" transform="translate(34.9783 7.90576)" d="M0.0223707 0C0.505769 0.0724922 1.87827 0.0437345 2.40013 0.0427501C3.90517 0.0327657 5.41021 0.0343829 6.91524 0.0477422C6.89978 1.89816 6.90526 3.74871 6.93184 5.59898C4.71116 5.66866 2.2453 5.62001 0.00591697 5.62324C0.00837791 3.7388 -0.0172855 1.8867 0.0223707 0Z" fill="#37364A" stroke="#37364A" stroke-width="1" />
+<path id="Vector_4" transform="translate(21.0166 7.91943)" d="M0.00839461 0C0.697668 0.0639141 1.84292 0.0286176 2.57529 0.0274926C4.01143 0.0298833 5.44749 0.0233436 6.88355 0.00801551C6.86337 1.8417 6.89213 3.68445 6.88362 5.52066C6.74293 5.65945 0.784365 5.60953 0.0113493 5.6103C-0.0112913 3.75159 0.00663679 1.86124 0.00839461 0Z" fill="#37364A" stroke="#37364A" stroke-width="1" />
+<path id="Vector_5" transform="translate(28.0076 14.0061)" d="M0 0.00899272C2.30252 0.012649 4.69526 -0.0200479 6.99117 0.0205927C6.9916 4.56053 6.88739 9.50695 6.99476 14.0098H0.000562191L0.0145547 5.01904C0.0142032 3.45909 0.0634922 1.54195 0 0.00899272Z" fill="#E09146" stroke="#E09146" stroke-width="1" />
+</g>
+<path id="Vector_6" transform="translate(42.9958 71.0039)" d="M0 0C2.2744 0.0641953 4.70855 0.0203206 6.99476 0.0170159C7.002 4.6298 7.06149 9.41703 6.99448 14.0169C4.80593 13.9451 2.21934 14.0072 0.00604677 14.0035C0.0113905 9.47194 0.110742 4.49655 0 0Z" fill="#E09146" stroke="#E09146" stroke-width="1" />
+<path id="Vector_7" transform="translate(70.9736 70.9922)" d="M0.0244965 0.0151191C2.07868 0.0507675 4.97858 0.100688 7.01595 0C6.96265 4.66685 7.0317 9.35311 7.00125 14.0209L0.0270285 14.0212C-0.0444793 9.38651 0.0516371 4.66172 0.0244965 0.0151191Z" fill="#E09146" stroke="#E09146" stroke-width="1" />
+</g>
+</g>
+<defs>
+<clipPath id="clip0_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip1_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip2_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip3_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip4_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip5_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip6_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip7_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip8_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip9_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip10_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip11_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip12_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip13_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip14_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip15_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip16_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip17_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip18_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip19_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+<clipPath id="clip20_1876_17377">
+<rect width="120" height="112" fill="white" />
+</clipPath>
+</defs>
+</svg>

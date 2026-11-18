@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { History, RotateCcw, X, LoaderCircle } from "lucide-react";
 import { apiJson } from "@/lib/client-api";
 import { displayName } from "@/lib/colors";
+import { CocoLoading, CocoSled, CocoEmpty, CocoArt, CocoFace, useCocoQuip } from "@/components/coco/Coco";
 
 interface Version {
   versionId: string;
@@ -73,11 +74,11 @@ export function VersionsDialog({
         {error ? <p className="mb-3 text-[12.5px] text-[color:var(--color-danger-text)]">{error}</p> : null}
         <div className="scroll-pane max-h-[50vh] space-y-2 overflow-y-auto pr-1">
           {versions === null ? (
-            <div className="flex items-center gap-2 py-6 text-[13px] text-[color:var(--color-text-muted)]">
-              <LoaderCircle className="h-4 w-4 animate-spin" /> Loading…
+            <div className="flex justify-center py-6">
+              <CocoSled size={64} label="Digging up snapshots…" />
             </div>
           ) : versions.length === 0 ? (
-            <p className="neu-inset-sm rounded-[14px] p-3 text-[12.5px] text-[color:var(--color-text-muted)]">No snapshots yet. Keep editing; one is saved within a minute.</p>
+            <CocoEmpty art="automation" title="No snapshots yet" hint="Keep editing. CoCo saves one within a minute." />
           ) : (
             versions.map((v) => (
               <div key={v.versionId} className="neu-raised-sm flex items-center gap-3 rounded-[14px] px-3 py-2.5">

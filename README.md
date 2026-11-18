@@ -1,6 +1,6 @@
-# Agent Canvas Plus: Multiplayer docs, slides, and artifacts with an agent, in Snowflake
+# Agent Canvas Plus (Co-CoCo): Multiplayer docs, slides, and artifacts with an agent, in Snowflake
 
-![Agent Canvas Plus: a shared brief with tracked suggestions from Luke, a comment thread, and the room chat.](assets/canvas_plus.jpg)
+![Agent Canvas Plus (Co-CoCo): a shared brief with tracked suggestions from Luke, a comment thread, and the room chat.](assets/canvas_plus.jpg)
 
 A fork of [Agent Canvas](https://github.com/Snowflake-Labs/snowflake-multiplayer-ai-canvas). The original is a shared chat room with a Cortex Agent. This fork adds the things a team actually builds in that room: **documents, slide decks, and artifacts** that everyone edits live, with comments, tracked suggestions, autosave, and version history. The agent, **Luke**, can write and review those documents, run Python, and propose SQL writes that only run after a teammate approves them. Everything runs in Snowflake, next to the data.
 
@@ -18,6 +18,7 @@ A fork of [Agent Canvas](https://github.com/Snowflake-Labs/snowflake-multiplayer
 | Autosave + history | Edits save to Snowflake within ~1.5 s; a snapshot is kept at most once a minute; restore any snapshot |
 | Luke's write tools | `create_document`, `edit_document` (as suggestions), `comment_on_document`, `read_document`, `list_documents`, `propose_sql` (approval-gated), `describe_sandbox`, `code_execution` |
 | Look | Neumorphic UI in light and dark |
+| Co-CoCo | The Cortex Code penguin is the logo, favicon, and Luke's avatar. A sledding CoCo is the loader, penguin illustrations fill the empty states, and doc kinds get pixel icons |
 
 ## How Luke's write tools work
 

@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { displayName } from "@/lib/colors";
 import { cn } from "@/lib/cn";
 import type { SuggestionInfo } from "./suggest";
+import { CocoLoading, CocoSled, CocoEmpty, CocoArt, CocoFace, useCocoQuip } from "@/components/coco/Coco";
 
 export interface CommentThread {
   commentId: string;
@@ -84,7 +85,7 @@ export function ThreadsPanel({
               <NewComment quote={draftQuote} onSubmit={onSubmitDraft} onCancel={onCancelDraft} />
             ) : null}
             {visible.length === 0 && draftQuote === null ? (
-              <Empty>Select text and press the comment button to start a thread. Luke can comment too.</Empty>
+              <CocoEmpty art="tip" size={84} title="No comments yet" hint="Select text and hit comment to start a thread. Luke chimes in too." />
             ) : null}
             {visible.map((root) => (
               <Thread
@@ -119,7 +120,7 @@ export function ThreadsPanel({
                 </button>
               </div>
             ) : (
-              <Empty>No pending suggestions. Switch to Suggesting, or ask Luke to edit, and changes show up here to accept or reject.</Empty>
+              <CocoEmpty art="changes" size={84} title="Nothing to review" hint="Switch to Suggesting, or ask Luke to edit. Changes land here to accept or reject." />
             )}
             {suggestions.map((s) => (
               <div

@@ -3,6 +3,7 @@
 import { cn } from "@/lib/cn";
 import { useTheme } from "@/lib/use-theme";
 import { userColor } from "@/lib/colors";
+import { CocoFace } from "@/components/coco/Coco";
 
 export function Avatar({
   name,
@@ -31,13 +32,13 @@ export function Avatar({
         className={cn(
           "inline-flex items-center justify-center rounded-full text-[11px] font-semibold uppercase shadow-[var(--neu-raised-sm)]",
           variant === "agent" &&
-            "bg-[image:var(--neu-accent-grad)] text-[color:var(--color-ink-0)]",
+            "bg-[color:var(--color-surface-raised)]",
           variant === "system" &&
             "bg-[color:var(--color-ink-800)] text-[color:var(--color-ink-100)]"
         )}
         style={style}
       >
-        {variant === "agent" ? <AgentGlyph /> : initials}
+        {variant === "agent" ? <CocoFace size={Math.round(size * 0.78)} /> : initials}
       </div>
       {spooky ? (
         <span
@@ -64,14 +65,3 @@ function pickInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function AgentGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <g stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-        <line x1="16" y1="4" x2="16" y2="28" />
-        <line x1="5.5" y1="10" x2="26.5" y2="22" />
-        <line x1="5.5" y1="22" x2="26.5" y2="10" />
-      </g>
-    </svg>
-  );
-}

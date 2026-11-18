@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { CanvasShell } from "@/components/workspace/CanvasShell";
+import { CocoLoading } from "@/components/coco/Coco";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ const DEFAULT_CANVAS_ID = "main";
 export default function CanvasHome() {
   return (
     <main className="min-h-screen bg-[color:var(--color-surface-base)]">
-      <Suspense fallback={<div className="p-8 text-[color:var(--color-text-muted)]">Loading canvas…</div>}>
+      <Suspense fallback={<div className="h-screen"><CocoLoading label="Sledding into the canvas…" /></div>}>
         <CanvasShell canvasId={DEFAULT_CANVAS_ID} />
       </Suspense>
     </main>

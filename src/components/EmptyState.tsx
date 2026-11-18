@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { CocoArt } from "./coco/Coco";
 
 const SUGGESTIONS = [
   "@Luke, draft a one-page brief on revenue by region as a doc.",
@@ -12,10 +12,10 @@ const SUGGESTIONS = [
 export function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
   return (
     <div className="mx-auto max-w-md px-1 py-6 text-center">
-      <div className="neu-raised-sm mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[16px] text-[color:var(--color-accent)]">
-        <Sparkles className="h-5 w-5" />
+      <div className="mx-auto mb-2 flex justify-center">
+        <CocoArt name="waddle" size={92} />
       </div>
-      <h2 className="text-[17px] font-bold tracking-tight text-[color:var(--color-text-primary)]">Chat with the room, build with Luke.</h2>
+      <h2 className="text-[17px] font-bold tracking-tight text-[color:var(--color-text-primary)]">Waddle in. Luke&apos;s on the ice.</h2>
       <p className="mt-2 text-[13px] leading-relaxed text-[color:var(--color-text-secondary)]">
         Mention <span className="font-semibold text-[color:var(--color-accent-emphasis)]">@Luke</span> to bring the agent in. Luke can query
         data, write and edit docs, slides, and artifacts, run Python, and propose SQL that a teammate approves. Use{" "}

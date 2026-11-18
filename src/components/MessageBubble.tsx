@@ -1,6 +1,7 @@
 import { Avatar } from "./ui/Avatar";
 import { Markdown } from "./Markdown";
 import { cn } from "@/lib/cn";
+import { CocoSled, useCocoQuip } from "./coco/Coco";
 
 export type BubbleRole = "user" | "agent" | "system";
 
@@ -15,6 +16,7 @@ interface MessageBubbleProps {
 export function MessageBubble({ role, author, text, streaming, children }: MessageBubbleProps) {
   const isAgent = role === "agent";
   const isSystem = role === "system";
+  const quip = useCocoQuip(isAgent && !!streaming && !text);
 
   if (isSystem) {
     return (
@@ -59,10 +61,7 @@ export function MessageBubble({ role, author, text, streaming, children }: Messa
             <>
               {text ? <Markdown>{text}</Markdown> : null}
               {streaming && !text ? (
-                <div className="flex items-center gap-1.5 text-[13px] text-[color:var(--color-text-muted)]">
-                  <span>Thinking</span>
-                  <span className="canvas-stream-cursor" />
-                </div>
+                <CocoSled size={40} label={`${quip}…`} />
               ) : null}
               {streaming && text ? <span className="canvas-stream-cursor" /> : null}
               {children}

@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Agent Canvas Plus",
+  title: "Agent Canvas Plus (Co-CoCo)",
   description: "Docs, slides, and artifacts your team builds together with an agent, inside Snowflake.",
 };
 

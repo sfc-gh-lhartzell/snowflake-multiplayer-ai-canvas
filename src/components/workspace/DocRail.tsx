@@ -1,28 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Presentation, CodeXml, FileType2, ChartColumn, Plus, Trash2, Sparkles } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import { CocoArt, CocoFace, PixelKindIcon } from "@/components/coco/Coco";
 import { cn } from "@/lib/cn";
 import { displayName } from "@/lib/colors";
 import type { DocKind, DocMetaClient } from "./types";
 
-export const KIND_META: Record<DocKind, { label: string; icon: React.ReactNode; tint: string }> = {
-  doc: { label: "Doc", icon: <FileText />, tint: "#1FA4D8" },
-  slides: { label: "Slides", icon: <Presentation />, tint: "#F59E0B" },
-  html: { label: "HTML", icon: <CodeXml />, tint: "#7B61FF" },
-  markdown: { label: "Markdown", icon: <FileType2 />, tint: "#10B981" },
-  chart: { label: "Chart", icon: <ChartColumn />, tint: "#E8618C" },
+export const KIND_META: Record<DocKind, { label: string; tint: string }> = {
+  doc: { label: "Doc", tint: "#1FA4D8" },
+  slides: { label: "Slides", tint: "#F59E0B" },
+  html: { label: "HTML", tint: "#7B61FF" },
+  markdown: { label: "Markdown", tint: "#10B981" },
+  chart: { label: "Chart", tint: "#E8618C" },
 };
 
 export function KindIcon({ kind, size = 30 }: { kind: DocKind; size?: number }) {
   const m = KIND_META[kind];
   return (
     <span
-      className="neu-raised-sm inline-flex shrink-0 items-center justify-center rounded-[10px] [&_svg]:h-[15px] [&_svg]:w-[15px]"
-      style={{ width: size, height: size, color: m.tint }}
+      className="neu-raised-sm inline-flex shrink-0 items-center justify-center rounded-[10px]"
+      style={{ width: size, height: size }}
       aria-hidden
     >
-      {m.icon}
+      <PixelKindIcon kind={kind} tint={m.tint} size={Math.round(size * 0.58)} />
     </span>
   );
 }
@@ -78,9 +79,10 @@ export function DocRail({
       </div>
       <div className="scroll-pane -mr-1 flex-1 space-y-2 overflow-y-auto pb-4 pl-1 pr-3 pt-1">
         {docs.length === 0 ? (
-          <p className="neu-inset-sm rounded-[14px] p-3 text-[12.5px] leading-relaxed text-[color:var(--color-text-muted)]">
-            Nothing yet. Create a doc, or ask <span className="font-semibold text-[color:var(--color-accent-emphasis)]">@Luke</span> to draft one.
-          </p>
+          <div className="neu-inset-sm flex flex-col items-center rounded-[14px] px-3 pb-3 pt-2 text-center text-[12px] leading-relaxed text-[color:var(--color-text-muted)]">
+            <CocoArt name="files" size={72} />
+            <span>Fresh ice. Create a doc, or ask <span className="font-semibold text-[color:var(--color-accent-emphasis)]">@Luke</span> to draft one.</span>
+          </div>
         ) : null}
         {docs.map((d) => (
           <div key={d.docId} className="group relative">
@@ -99,7 +101,7 @@ export function DocRail({
                   {d.title}
                 </span>
                 <span className="flex items-center gap-1 truncate text-[11px] text-[color:var(--color-text-muted)]">
-                  {d.createdBy === "LUKE" ? <Sparkles className="h-2.5 w-2.5 text-[color:var(--color-accent)]" aria-label="Made by Luke" /> : null}
+                  {d.createdBy === "LUKE" ? <span aria-label="Made by Luke" title="Made by Luke"><CocoFace size={12} /></span> : null}
                   {KIND_META[d.kind].label} · {d.updatedBy ? displayName(d.updatedBy === "LUKE" ? "Luke" : d.updatedBy) : ""}
                 </span>
               </span>

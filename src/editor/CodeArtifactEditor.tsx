@@ -24,6 +24,7 @@ import { DocHeader } from "./DocHeader";
 import { ThreadsPanel } from "./ThreadsPanel";
 import { VersionsDialog } from "./VersionsDialog";
 import type { DocMetaClient } from "@/components/workspace/types";
+import { CocoLoading, CocoSled, CocoEmpty, CocoArt, CocoFace, useCocoQuip } from "@/components/coco/Coco";
 
 const SNAPSHOT_DEBOUNCE_MS = 2000;
 const PREVIEW_DEBOUNCE_MS = 350;
@@ -42,20 +43,27 @@ export function CodeArtifactEditor({ doc, me, onNotice }: { doc: DocMetaClient; 
     },
   });
   if (!session.ydoc || !session.provider || me === "…") {
-    return <div className="p-10 text-[13px] text-[color:var(--color-text-muted)]">Opening…</div>;
+    return <CocoLoading label="Sledding into the artifact…" />;
   }
   return (
-    <Inner
-      key={doc.docId}
-      doc={doc}
-      me={me}
-      ydoc={session.ydoc}
-      provider={session.provider}
-      session={session}
-      pending={pending}
-      pulse={pulse}
-      onNotice={onNotice}
-    />
+    <div className="relative h-full">
+      <Inner
+        key={doc.docId}
+        doc={doc}
+        me={me}
+        ydoc={session.ydoc}
+        provider={session.provider}
+        session={session}
+        pending={pending}
+        pulse={pulse}
+        onNotice={onNotice}
+      />
+      {!session.synced ? (
+        <div className="absolute inset-0 z-40 bg-[color:var(--color-surface-base)]">
+          <CocoLoading label="Sledding into the artifact…" />
+        </div>
+      ) : null}
+    </div>
   );
 }
 

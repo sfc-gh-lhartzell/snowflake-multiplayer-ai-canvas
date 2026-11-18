@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronRight, ChevronDown, BookOpen, Globe, ExternalLink, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Pill } from "./ui/Pill";
 import { cn } from "@/lib/cn";
+import { CocoSled } from "@/components/coco/Coco";
 
 export type SearchStatus = "running" | "completed" | "errored";
 export type SearchVariant = "docs" | "web";
@@ -120,7 +121,7 @@ function StatusPill({ status }: { status: SearchStatus }) {
   if (status === "running") {
     return (
       <Pill tone="accent">
-        <Loader2 className="h-3 w-3 animate-spin" />
+        <CocoSled size={22} />
         Searching
       </Pill>
     );

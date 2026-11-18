@@ -1,4 +1,4 @@
-# Agent Canvas Plus – context for CoCo
+# Agent Canvas Plus (Co-CoCo) – context for CoCo
 
 A multiplayer Agent Canvas app deployed to Snowflake App Runtime. A team and Luke share one canvas, in real time, over SSE: a room chat plus documents, slide decks, and artifacts everyone co-edits (Yjs). Mention `@Luke` to invoke the agent. Type `/file` to pin durable context the team can revisit across sessions.
 
@@ -27,6 +27,7 @@ A new session is the same canvas with a fresh thread. Do not conflate the two.
 - `src/app/api/canvas/[id]/` – `send`, `stream`, `docs`, `actions`, `permission`, `file`, `new-session`, `prior-sessions`, `load-context`.
 - `src/app/api/docs/[docId]/` – `sync` (SSE + POST), `claim`, `snapshot`, `versions`, `comments`. `src/app/api/actions/[actionId]` approves/rejects SQL. `src/app/api/ai/transform` is inline Ask Luke.
 - `src/lib/` – `agent` (SDK wrapper), `agent-turn` (runs a turn, applies Luke's tool calls), `doc-hub` (live docs), `docs-store` (SQL for Plus tables), `y-provider` (browser Yjs transport), `canvas-events` (one canvas SSE for all panes), `client-api` (`?as=` dev identity), `auth`, `canvas-store`, `canvas-bus`, `theme`.
+- `src/components/coco/Coco.tsx` – the CoCo sprite kit: `CocoFace` (logo, Luke's avatar; `mode="hop"` while busy), `CocoSled` / `CocoLoading` (the loader), `CocoArt` + `CocoEmpty` (Desktop's animated penguin SVGs in `public/coco/`, play once, click to replay), `PixelKindIcon` (doc-kind icons), `useCocoQuip` (rotating "thinking" captions). Palette and front poses match Cortex Code Desktop's `CocoPenguinSprite`. Use these for new loaders and empty states instead of spinners.
 
 ## Deploy loop
 
