@@ -31,7 +31,7 @@ interface MentionCandidate {
 }
 
 const MENTION_CANDIDATES: MentionCandidate[] = [
-  { key: "Gil", display: "Gil", subtitle: "shared Snowflake agent", variant: "agent" },
+  { key: "Luke", display: "Luke", subtitle: "shared Snowflake agent", variant: "agent" },
 ];
 
 interface MentionState {
@@ -97,7 +97,7 @@ export function Composer({
         await onFile({ text: rest, source: "user" });
       } else {
         // Bare /file -> open the sheet so the user can pick between
-        // "write it myself" and "let Gil write it."
+        // "write it myself" and "let Luke write it."
         setFileSheetText("");
         setFileSheet("open");
       }
@@ -187,7 +187,7 @@ export function Composer({
   const count = value.length;
 
   return (
-    <div className="sticky bottom-0 border-t border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-base)]/95 backdrop-blur">
+    <div className="sticky bottom-0 bg-[color:var(--color-surface-base)]">
       <div className="mx-auto max-w-5xl px-6 py-3">
         {pendingNotice ? (
           <div className="mb-2 text-[12px] text-[color:var(--color-text-muted)]">
@@ -219,8 +219,8 @@ export function Composer({
           <form
             onSubmit={handleSubmit}
             className={cn(
-              "flex items-end gap-2 rounded-[14px] border bg-[color:var(--color-surface-raised)] p-2 shadow-[var(--shadow-raised)] transition-colors",
-              "border-[color:var(--color-border-subtle)] focus-within:border-[color:var(--color-snow-400)]"
+              "neu-inset flex items-end gap-2 rounded-[20px] p-2 transition-shadow",
+              "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[color:var(--color-accent)]"
             )}
           >
             <textarea
@@ -237,10 +237,10 @@ export function Composer({
               rows={1}
               placeholder={
                 busy
-                  ? "Gil is responding. Your @Gil message will send when it's done…"
+                  ? "Luke is responding. Your @Luke message will send when it's done…"
                   : theme === "halloween"
-                  ? "Boo! Chat with the room, or summon @Gil…"
-                  : "Chat with the room, or type @Gil to invoke the agent…"
+                  ? "Boo! Chat with the room, or summon @Luke…"
+                  : "Chat with the room, or type @Luke to invoke the agent…"
               }
               className="min-h-[36px] max-h-[180px] flex-1 resize-none border-0 bg-transparent px-2 py-1.5 text-[14.5px] leading-6 text-[color:var(--color-text-primary)] placeholder:text-[color:var(--color-text-muted)] focus:outline-none"
             />
@@ -261,7 +261,7 @@ export function Composer({
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-snow-400)]",
                   canSend
-                    ? "bg-[color:var(--color-accent)] text-[color:var(--color-accent-fg)] hover:bg-[color:var(--color-accent-hover)]"
+                    ? "neu-accent"
                     : "bg-[color:var(--color-ink-200)] text-[color:var(--color-ink-500)]"
                 )}
                 aria-label="Send message"
@@ -276,8 +276,7 @@ export function Composer({
           </form>
         </div>
         <div className="mt-1.5 flex items-center justify-between text-[11px] text-[color:var(--color-text-muted)]">
-          <span>Enter to send · Shift + Enter for a newline · @Gil to invoke the agent · /file to log context</span>
-          <span>Gil streams to everyone in this canvas</span>
+          <span>Enter to send · @Luke to invoke · /file to save context</span>
         </div>
       </div>
     </div>
@@ -299,7 +298,7 @@ function MentionMenu({
 }) {
   return (
     <div
-      className="absolute left-2 bottom-full mb-2 w-[260px] overflow-hidden rounded-[12px] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-raised)] shadow-[var(--shadow-overlay)]"
+      className="absolute left-2 bottom-full mb-2 w-[260px] overflow-hidden rounded-[12px] neu-menu"
       role="listbox"
       aria-label="Mention candidates"
     >
@@ -439,22 +438,22 @@ function FileSheet({
         onChange={(e) => onTextChange(e.target.value)}
         disabled={submitting}
         rows={3}
-        placeholder="Type the context you want to save. Or skip this and let Gil write a summary."
-        className="min-h-[72px] w-full resize-none rounded-[8px] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-raised)] px-3 py-2 text-[13px] leading-relaxed text-[color:var(--color-text-primary)] placeholder:text-[color:var(--color-text-muted)] focus:border-[color:var(--color-snow-400)] focus:outline-none"
+        placeholder="Type the context you want to save. Or skip this and let Luke write a summary."
+        className="min-h-[72px] w-full resize-none rounded-[8px] neu-inset-sm px-3 py-2 text-[13px] leading-relaxed text-[color:var(--color-text-primary)] placeholder:text-[color:var(--color-text-muted)] focus:border-[color:var(--color-snow-400)] focus:outline-none"
       />
       <div className="mt-2 flex items-center justify-end gap-2">
         <button
           type="button"
           onClick={onSubmitAgent}
           disabled={submitting}
-          className="flex items-center gap-1.5 rounded-[8px] border border-[color:var(--color-accent-surface-border)] bg-[color:var(--color-surface-raised)] px-3 py-1.5 text-[12px] font-medium text-[color:var(--color-accent-emphasis)] hover:bg-[color:var(--color-accent-subtle)] disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-[8px] neu-btn px-3 py-1.5 text-[12px] font-medium text-[color:var(--color-accent-emphasis)] hover:bg-[color:var(--color-accent-subtle)] disabled:opacity-50"
         >
           {submitting ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <Sparkles className="h-3.5 w-3.5" />
           )}
-          Let Gil write it
+          Let Luke write it
         </button>
         <button
           type="button"
@@ -463,7 +462,7 @@ function FileSheet({
           className={cn(
             "rounded-[8px] px-3 py-1.5 text-[12px] font-medium transition-colors",
             canSubmitUser
-              ? "bg-[color:var(--color-accent)] text-[color:var(--color-accent-fg)] hover:bg-[color:var(--color-accent-hover)]"
+              ? "neu-accent"
               : "bg-[color:var(--color-ink-200)] text-[color:var(--color-ink-500)]"
           )}
         >

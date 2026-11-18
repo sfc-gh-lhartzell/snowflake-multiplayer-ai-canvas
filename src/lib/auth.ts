@@ -61,8 +61,28 @@ export function getCallerIdentity(req: IncomingMessage | Request): CallerIdentit
     const header = headerValue(req, "sf-context-current-user");
     return { user: (header ?? "UNKNOWN").toUpperCase(), deployed: true };
   }
-  const local = process.env.CANVAS_LOCAL_USER ?? "LOCAL_DEV";
+  const local = devOverride(req) ?? process.env.CANVAS_LOCAL_USER ?? "LOCAL_DEV";
   return { user: local.toUpperCase(), deployed: false };
+}
+
+/**
+ * Local dev only: `?as=NAME` (or the x-canvas-as header the client adds) lets
+ * two browser tabs act as two teammates. Never consulted when deployed, since
+ * a real caller token short-circuits getCallerIdentity above.
+ */
+function devOverride(req: IncomingMessage | Request): string | undefined {
+  const header = headerValue(req, "x-canvas-as");
+  let v = header;
+  if (!v && "url" in req && req.url) {
+    try {
+      v = new URL(req.url, "http://localhost").searchParams.get("as") ?? undefined;
+    } catch {
+      v = undefined;
+    }
+  }
+  if (!v) return undefined;
+  const clean = v.replace(/[^A-Za-z0-9_ -]/g, "").trim().slice(0, 32);
+  return clean || undefined;
 }
 
 function headerValue(req: IncomingMessage | Request, name: string): string | undefined {

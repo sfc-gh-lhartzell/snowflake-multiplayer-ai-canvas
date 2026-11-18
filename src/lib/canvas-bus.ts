@@ -132,7 +132,7 @@ export function presentUsers(canvasId: string): string[] {
   return Array.from(set.keys());
 }
 
-// ----- room context (non-mention chatter buffered between @Gil invocations) -----
+// ----- room context (non-mention chatter buffered between @Luke invocations) -----
 
 export function appendRoomLine(canvasId: string, line: RoomLine): void {
   const s = state();

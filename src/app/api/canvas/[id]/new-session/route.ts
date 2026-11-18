@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
  * POST /api/canvas/:id/new-session
  *
  * Starts a fresh session on this canvas. Clears the CANVASES mapping so the
- * next `@Gil` invocation lands on a brand-new Cortex thread. Broadcasts a
+ * next `@Luke` invocation lands on a brand-new Cortex thread. Broadcasts a
  * `session.reset` event so every participant's UI clears live.
  *
  * Blocked while an agent turn is in flight — we don't yank the thread out
@@ -30,7 +30,7 @@ export async function POST(
   if (inflight) {
     return NextResponse.json(
       {
-        error: "A @Gil turn is in flight. Try again when it finishes.",
+        error: "A @Luke turn is in flight. Try again when it finishes.",
         inflight_user: inflight,
       },
       { status: 409 }

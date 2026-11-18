@@ -24,16 +24,14 @@ export function ToolCard({ toolName, friendlyName, status, input, sql, resultSum
   return (
     <div
       className={cn(
-        "mt-2 overflow-hidden rounded-[12px] border bg-[color:var(--color-surface-raised)]",
-        status === "errored"
-          ? "border-[color:var(--color-danger-border)]"
-          : "border-[color:var(--color-border-subtle)]"
+        "neu-raised-sm mt-2 overflow-hidden rounded-[16px]",
+        status === "errored" && "outline outline-1 outline-[color:var(--color-danger-border)]"
       )}
     >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-[color:var(--color-surface-sunken)]"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left"
       >
         {open ? (
           <ChevronDown className="h-3.5 w-3.5 text-[color:var(--color-text-muted)]" />
@@ -41,11 +39,11 @@ export function ToolCard({ toolName, friendlyName, status, input, sql, resultSum
           <ChevronRight className="h-3.5 w-3.5 text-[color:var(--color-text-muted)]" />
         )}
         <Database className="h-3.5 w-3.5 text-[color:var(--color-snow-700)]" />
-        <span className="text-[13px] font-medium text-[color:var(--color-text-primary)]">
+        <span className="min-w-0 truncate text-[13px] font-medium text-[color:var(--color-text-primary)]">
           {label}
         </span>
-        <span className="text-[12px] text-[color:var(--color-text-muted)]">
-          {statusCopy(status)}
+        <span className="hidden truncate text-[12px] text-[color:var(--color-text-muted)] 2xl:inline">
+          {statusCopy(status, toolName)}
           {by ? ` · for ${by}` : ""}
         </span>
         <span className="ml-auto">
@@ -54,13 +52,13 @@ export function ToolCard({ toolName, friendlyName, status, input, sql, resultSum
       </button>
 
       {open ? (
-        <div className="border-t border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-overlay)] px-3 py-2.5 text-[12.5px]">
+        <div className="px-3 pb-3 text-[12.5px]">
           {input ? (
             <div className="mb-2">
               <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-[color:var(--color-text-muted)]">
                 Prompt
               </div>
-              <div className="rounded-[6px] bg-[color:var(--color-surface-raised)] px-2.5 py-1.5 font-mono text-[12px] text-[color:var(--color-text-primary)]">
+              <div className="neu-inset-sm max-h-48 overflow-auto whitespace-pre-wrap rounded-[10px] px-2.5 py-1.5 font-mono text-[12px] text-[color:var(--color-text-primary)]">
                 {typeof input === "string" ? input : JSON.stringify(input, null, 2)}
               </div>
             </div>
@@ -117,13 +115,22 @@ function StatusPill({ status }: { status: ToolStatus }) {
   );
 }
 
-function statusCopy(status: ToolStatus): string {
-  if (status === "running") return "generating query";
-  if (status === "completed") return "query complete";
-  return "query failed";
+function statusCopy(status: ToolStatus, toolName: string): string {
+  const query = /analyst|sql/i.test(toolName);
+  if (status === "running") return query ? "generating query" : "working";
+  if (status === "completed") return query ? "query complete" : "done";
+  return query ? "query failed" : "failed";
 }
 
 function prettify(name: string): string {
+  if (name === "create_document") return "Create document";
+  if (name === "edit_document") return "Suggest edits";
+  if (name === "comment_on_document") return "Comment";
+  if (name === "read_document") return "Read document";
+  if (name === "list_documents") return "List documents";
+  if (name === "propose_sql") return "Propose SQL";
+  if (name === "describe_sandbox") return "Sandbox schema";
+  if (name === "get_filings") return "Team filings";
   if (name === "tpch_analyst") return "Cortex Analyst · TPC-H";
   if (name === "tasty_bytes_analyst") return "Cortex Analyst · Tasty Bytes";
   if (name === "system_execute_sql" || name === "sql_exec" || name === "snowflake_sql_execute") return "Snowflake SQL";

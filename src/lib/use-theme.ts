@@ -7,10 +7,9 @@ import { useEffect, useState } from "react";
 import { readTheme, type Theme } from "./theme";
 
 export function useTheme(): Theme {
-  const [t, setT] = useState<Theme>(() => {
-    if (typeof document === "undefined") return "light";
-    return readTheme();
-  });
+  // Start from the server's value so hydration matches; the effect below
+  // picks up the real theme (set pre-hydration on <html>) right after mount.
+  const [t, setT] = useState<Theme>("light");
 
   useEffect(() => {
     if (typeof document === "undefined") return;

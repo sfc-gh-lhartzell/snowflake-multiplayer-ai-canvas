@@ -5,28 +5,26 @@ import { BrandLockup } from "./Brand";
 import { PresenceStrip } from "./PresenceStrip";
 import { Pill } from "./ui/Pill";
 import { Button } from "./ui/Button";
-import { Share2, RefreshCw, History, Check, Sun, Moon } from "lucide-react";
+import { Share2, RefreshCw, History, Check, Sun, Moon, PanelRightOpen } from "lucide-react";
 import { PriorSessionsMenu } from "./PriorSessionsMenu";
 import { toggleTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/use-theme";
+import { useCanvas, type ConnState } from "@/lib/canvas-events";
 
-export type ConnState = "connecting" | "live" | "disconnected";
+export type { ConnState };
 
 export function CanvasHeader({
-  canvasId,
-  me,
-  presence,
-  conn,
   onNewSession,
   onLoadContext,
+  chatHidden,
+  onShowChat,
 }: {
-  canvasId: string;
-  me: string;
-  presence: string[];
-  conn: ConnState;
   onNewSession?: () => void;
   onLoadContext?: (threadId: number) => void;
+  chatHidden?: boolean;
+  onShowChat?: () => void;
 }) {
+  const { canvasId, me, users: presence, conn } = useCanvas();
   const [priorOpen, setPriorOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const theme = useTheme();
@@ -39,14 +37,20 @@ export function CanvasHeader({
       : { tone: "danger" as const, label: "Disconnected" };
 
   return (
-    <header className="sticky top-0 z-10 border-b border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-raised)]/80 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-3">
+    <header className="z-10 shrink-0 px-5 pt-4">
+      <div className="neu-raised-sm flex items-center gap-4 rounded-[22px] px-5 py-2.5">
         <BrandLockup />
         <Pill tone={tone} dot pulsing>
           {label}
         </Pill>
         <div className="ml-auto flex items-center gap-2">
           <PresenceStrip users={presence} me={me} />
+          {chatHidden && onShowChat ? (
+            <Button variant="secondary" size="sm" onClick={onShowChat}>
+              <PanelRightOpen className="h-3.5 w-3.5" />
+              Chat
+            </Button>
+          ) : null}
           {onLoadContext ? (
             <div className="relative">
               <Button

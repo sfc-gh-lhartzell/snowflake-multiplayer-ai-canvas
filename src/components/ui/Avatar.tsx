@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/cn";
 import { useTheme } from "@/lib/use-theme";
+import { userColor } from "@/lib/colors";
 
 export function Avatar({
   name,
@@ -17,7 +18,10 @@ export function Avatar({
   title?: string;
 }) {
   const initials = pickInitials(name);
-  const style = { width: size, height: size };
+  const style =
+    variant === "person"
+      ? { width: size, height: size, background: userColor(name), color: "#fff" }
+      : { width: size, height: size };
   const theme = useTheme();
   const spooky = theme === "halloween" && variant === "agent";
 
@@ -25,11 +29,9 @@ export function Avatar({
     <div className="relative inline-flex" title={title ?? name}>
       <div
         className={cn(
-          "inline-flex items-center justify-center rounded-full text-[11px] font-semibold uppercase",
-          variant === "person" &&
-            "bg-[color:var(--color-ink-200)] text-[color:var(--color-ink-700)]",
+          "inline-flex items-center justify-center rounded-full text-[11px] font-semibold uppercase shadow-[var(--neu-raised-sm)]",
           variant === "agent" &&
-            "bg-[color:var(--color-snow-500)] text-[color:var(--color-ink-0)] ring-2 ring-[color:var(--color-snow-100)]",
+            "bg-[image:var(--neu-accent-grad)] text-[color:var(--color-ink-0)]",
           variant === "system" &&
             "bg-[color:var(--color-ink-800)] text-[color:var(--color-ink-100)]"
         )}

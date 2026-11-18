@@ -11,10 +11,11 @@
 
 import { CortexAgentClient } from "@snowflake/cortex-agent-sdk";
 import { getServiceToken } from "./auth";
+import { hasKeyPairConfig, keyPairJwt, accountHost } from "./sf-keypair";
 import type { IncomingMessage } from "node:http";
 
 const AGENT_FQN = {
-  database: "AGENT_CANVAS",
+  database: "AGENT_CANVAS_PLUS",
   schema: "AGENTS",
   name: "CANVAS_AGENT",
 };
@@ -43,6 +44,17 @@ class CompositeOAuthAuth {
   }
 }
 
+class KeyPairAuth {
+  constructor(private readonly role: string) {}
+  async getAuthHeaders(): Promise<Record<string, string>> {
+    return {
+      Authorization: `Bearer ${keyPairJwt()}`,
+      "X-Snowflake-Authorization-Token-Type": "KEYPAIR_JWT",
+      "X-Snowflake-Role": this.role,
+    };
+  }
+}
+
 export function callerAgentClient(req: IncomingMessage | Request): CortexAgentClient {
   const account = requireEnv("SNOWFLAKE_ACCOUNT");
   const host = process.env.SNOWFLAKE_HOST;
@@ -56,14 +68,24 @@ export function callerAgentClient(req: IncomingMessage | Request): CortexAgentCl
 
   if (serviceToken) {
     // Auth: service OAuth token with an X-Snowflake-Role header pinned to
-    // AGENT_CANVAS_ROLE. That role is the agent's least-privilege
+    // AGENT_CANVAS_PLUS_ROLE. That role is the agent's least-privilege
     // execution role, scoped to USAGE on the agent, its semantic views,
     // its Cortex Search services, and the warehouse — nothing else. The
     // service inherits ACCOUNTADMIN, which has the role granted to it, so
     // the downgrade is honored.
     return new CortexAgentClient({
       ...common,
-      auth: new CompositeOAuthAuth(serviceToken, "AGENT_CANVAS_ROLE") as unknown as string,
+      auth: new CompositeOAuthAuth(serviceToken, "AGENT_CANVAS_PLUS_ROLE") as unknown as string,
+    });
+  }
+
+  // Local dev: key-pair JWT for the service user written by
+  // scripts/provision-dev.sh, downgraded to the same least-privilege role.
+  if (hasKeyPairConfig()) {
+    return new CortexAgentClient({
+      account,
+      baseUrl: `https://${accountHost()}`,
+      auth: new KeyPairAuth(process.env.SNOWFLAKE_ROLE ?? "AGENT_CANVAS_PLUS_ROLE") as unknown as string,
     });
   }
 

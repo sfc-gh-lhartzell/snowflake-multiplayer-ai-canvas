@@ -19,7 +19,7 @@ export function MessageBubble({ role, author, text, streaming, children }: Messa
   if (isSystem) {
     return (
       <div className="flex justify-center py-2">
-        <div className="rounded-full border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-raised)] px-3 py-1 text-[12px] text-[color:var(--color-text-muted)]">
+        <div className="neu-inset-sm rounded-full px-3 py-1 text-[12px] text-[color:var(--color-text-muted)]">
           {text}
         </div>
       </div>
@@ -39,7 +39,7 @@ export function MessageBubble({ role, author, text, streaming, children }: Messa
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-baseline gap-2">
           <span className="text-[13px] font-semibold text-[color:var(--color-text-primary)]">
-            {isAgent ? "Gil" : author}
+            {isAgent ? "Luke" : author}
           </span>
           {isAgent ? (
             <span className="text-[11px] text-[color:var(--color-text-muted)]">
@@ -49,10 +49,10 @@ export function MessageBubble({ role, author, text, streaming, children }: Messa
         </div>
         <div
           className={cn(
-            "rounded-[12px] border px-3.5 py-2.5",
+            "rounded-[18px] px-3.5 py-2.5",
             isAgent
-              ? "border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-raised)]"
-              : "border-[color:var(--color-accent-surface-border)] bg-[color:var(--color-accent-subtle)]"
+              ? "neu-raised-sm"
+              : "bg-[color:var(--color-accent-subtle)] shadow-[var(--neu-inset-sm)]"
           )}
         >
           {isAgent ? (
@@ -68,7 +68,7 @@ export function MessageBubble({ role, author, text, streaming, children }: Messa
               {children}
             </>
           ) : (
-            <div className="whitespace-pre-wrap text-[14.5px] leading-relaxed text-[color:var(--color-text-primary)]">
+            <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[14px] leading-relaxed text-[color:var(--color-text-primary)]">
               {renderUserText(text)}
             </div>
           )}
@@ -79,14 +79,14 @@ export function MessageBubble({ role, author, text, streaming, children }: Messa
 }
 
 /**
- * Lightly highlight @Gil (any case) in user messages so a reader can scan
+ * Lightly highlight @Luke (any case) in user messages so a reader can scan
  * the thread and spot which lines invoked the agent.
  */
 function renderUserText(text: string): React.ReactNode {
-  const parts = text.split(/(@gil\b)/gi);
+  const parts = text.split(/(@luke\b)/gi);
   if (parts.length === 1) return text;
   return parts.map((part, i) =>
-    /^@gil$/i.test(part) ? (
+    /^@luke$/i.test(part) ? (
       <span key={i} className="font-semibold text-[color:var(--color-accent-emphasis)]">
         {part}
       </span>

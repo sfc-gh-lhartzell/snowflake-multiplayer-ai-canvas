@@ -17,17 +17,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-[8px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-snow-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-surface-base)]",
-        size === "md" && "h-9 px-4 text-sm",
-        size === "sm" && "h-7 px-3 text-xs",
-        variant === "primary" &&
-          "bg-[color:var(--color-accent)] text-[color:var(--color-accent-fg)] hover:bg-[color:var(--color-accent-hover)]",
-        variant === "secondary" &&
-          "border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-raised)] text-[color:var(--color-text-primary)] hover:bg-[color:var(--color-surface-sunken)]",
-        variant === "ghost" &&
-          "text-[color:var(--color-text-secondary)] hover:bg-[color:var(--color-surface-sunken)] hover:text-[color:var(--color-text-primary)]",
+        "inline-flex items-center justify-center gap-1.5 rounded-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-50",
+        size === "md" && "h-10 px-4 text-sm",
+        size === "sm" && "h-8 px-3 text-xs",
+        variant === "primary" && "neu-accent",
+        variant === "secondary" && "neu-btn",
+        variant === "ghost" && "neu-ghost",
         variant === "danger" &&
-          "bg-[color:var(--color-danger-500)] text-[color:var(--color-text-inverse)] hover:bg-[color:var(--color-danger-hover)]",
+          "bg-[color:var(--color-danger-500)] text-[color:var(--color-text-inverse)] shadow-[var(--neu-raised-sm)] hover:bg-[color:var(--color-danger-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-danger-500)]",
         className
       )}
       {...rest}

@@ -10,13 +10,14 @@
 
 import snowflake, { type Connection } from "snowflake-sdk";
 import { getServiceToken, getCallerToken, composeLoginToken } from "./auth";
+import { hasKeyPairConfig, privateKeyPem } from "./sf-keypair";
 import type { IncomingMessage } from "node:http";
 
 snowflake.configure({ logLevel: "WARN" } as unknown as snowflake.ConfigureOptions);
 
-const DATABASE = "AGENT_CANVAS";
+const DATABASE = "AGENT_CANVAS_PLUS";
 const SCHEMA = "PUBLIC";
-const WAREHOUSE = "AGENT_CANVAS_WH";
+const WAREHOUSE = "AGENT_CANVAS_PLUS_WH";
 
 function envRequired(name: string): string {
   const v = process.env[name];
@@ -40,6 +41,17 @@ async function ownerConnection(): Promise<Connection> {
         schema: SCHEMA,
         warehouse: WAREHOUSE,
       }
+    : hasKeyPairConfig()
+    ? {
+        account: envRequired("SNOWFLAKE_ACCOUNT"),
+        username: envRequired("SNOWFLAKE_USER"),
+        authenticator: "SNOWFLAKE_JWT",
+        privateKey: privateKeyPem(),
+        role: process.env.SNOWFLAKE_ROLE,
+        database: DATABASE,
+        schema: SCHEMA,
+        warehouse: WAREHOUSE,
+      }
     : {
         account: envRequired("SNOWFLAKE_ACCOUNT"),
         username: envRequired("SNOWFLAKE_USER"),
@@ -50,6 +62,14 @@ async function ownerConnection(): Promise<Connection> {
       };
   return connectAsync(config);
 }
+
+/** Owner-rights connection for modules outside this file (docs store). */
+export function openOwnerConnection(): Promise<Connection> {
+  return ownerConnection();
+}
+
+/** Exposed for the docs store and approvals. */
+export { executeAsync };
 
 /**
  * Create a connection in caller's rights. Not currently used (all data access
@@ -106,7 +126,7 @@ export async function getCanvas(canvasId: string): Promise<CanvasRow | undefined
   try {
     const rows = await executeAsync<CanvasRow>(
       conn,
-      "SELECT canvas_id AS \"CANVAS_ID\", thread_id AS \"THREAD_ID\", display_name AS \"DISPLAY_NAME\", created_by AS \"CREATED_BY\", created_at AS \"CREATED_AT\" FROM AGENT_CANVAS.PUBLIC.CANVASES WHERE canvas_id = ?",
+      "SELECT canvas_id AS \"CANVAS_ID\", thread_id AS \"THREAD_ID\", display_name AS \"DISPLAY_NAME\", created_by AS \"CREATED_BY\", created_at AS \"CREATED_AT\" FROM AGENT_CANVAS_PLUS.PUBLIC.CANVASES WHERE canvas_id = ?",
       [canvasId]
     );
     return rows[0];
@@ -125,7 +145,7 @@ export async function putCanvas(row: {
   try {
     await executeAsync(
       conn,
-      "INSERT INTO AGENT_CANVAS.PUBLIC.CANVASES (canvas_id, thread_id, display_name, created_by) VALUES (?, ?, ?, ?)",
+      "INSERT INTO AGENT_CANVAS_PLUS.PUBLIC.CANVASES (canvas_id, thread_id, display_name, created_by) VALUES (?, ?, ?, ?)",
       [row.canvasId, row.threadId, row.displayName ?? null, row.createdBy]
     );
   } finally {
@@ -138,7 +158,7 @@ export async function deleteCanvas(canvasId: string): Promise<void> {
   try {
     await executeAsync(
       conn,
-      "DELETE FROM AGENT_CANVAS.PUBLIC.CANVASES WHERE canvas_id = ?",
+      "DELETE FROM AGENT_CANVAS_PLUS.PUBLIC.CANVASES WHERE canvas_id = ?",
       [canvasId]
     );
   } finally {
@@ -167,7 +187,7 @@ export async function putFiling(row: FilingRow): Promise<void> {
   try {
     await executeAsync(
       conn,
-      "INSERT INTO AGENT_CANVAS.PUBLIC.CANVAS_CONTEXT (id, canvas_id, thread_id, filed_by, participants, source, context) " +
+      "INSERT INTO AGENT_CANVAS_PLUS.PUBLIC.CANVAS_CONTEXT (id, canvas_id, thread_id, filed_by, participants, source, context) " +
         "SELECT ?, ?, ?, ?, PARSE_JSON(?), ?, ?",
       [
         row.id,
@@ -213,7 +233,7 @@ export async function listPriorSessions(
               TO_VARCHAR(MAX(filed_at)) AS "LAST_FILING",
               COUNT(*) AS "N_FILINGS",
               ARRAY_AGG(DISTINCT filed_by) AS "PARTICIPANTS"
-       FROM AGENT_CANVAS.PUBLIC.CANVAS_CONTEXT
+       FROM AGENT_CANVAS_PLUS.PUBLIC.CANVAS_CONTEXT
        WHERE ${where}
        GROUP BY thread_id
        ORDER BY MAX(filed_at) DESC`,
@@ -245,7 +265,7 @@ export async function listFilingsByThread(threadId: number): Promise<FilingRecor
               source AS "SOURCE",
               context AS "CONTEXT",
               TO_VARCHAR(filed_at) AS "FILED_AT"
-       FROM AGENT_CANVAS.PUBLIC.CANVAS_CONTEXT
+       FROM AGENT_CANVAS_PLUS.PUBLIC.CANVAS_CONTEXT
        WHERE thread_id = ?
        ORDER BY filed_at ASC`,
       [threadId]
@@ -276,7 +296,7 @@ export async function getLatestFiling(canvasId: string): Promise<LatestFiling | 
               filed_by AS "FILED_BY",
               source AS "SOURCE",
               context AS "CONTEXT"
-       FROM AGENT_CANVAS.PUBLIC.CANVAS_CONTEXT
+       FROM AGENT_CANVAS_PLUS.PUBLIC.CANVAS_CONTEXT
        WHERE canvas_id = ?
        ORDER BY filed_at DESC
        LIMIT 1`,

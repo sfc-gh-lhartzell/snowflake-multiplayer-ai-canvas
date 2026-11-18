@@ -15,10 +15,10 @@ export function NoticeBanner({
   return (
     <div
       className={cn(
-        "mx-auto my-2 flex max-w-5xl items-start gap-2 rounded-[10px] border px-3.5 py-2 text-[13px]",
-        tone === "info" && "border-[color:var(--color-accent-surface-border)] bg-[color:var(--color-accent-subtle)] text-[color:var(--color-accent-emphasis)]",
-        tone === "warn" && "border-[color:var(--color-warn-border)] bg-[color:var(--color-warn-surface)] text-[color:var(--color-warn-text)]",
-        tone === "danger" && "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-text)]"
+        "neu-raised-sm my-2 flex items-start gap-2 rounded-[14px] px-3.5 py-2.5 text-[13px]",
+        tone === "info" && "text-[color:var(--color-accent-emphasis)]",
+        tone === "warn" && "text-[color:var(--color-warn-text)]",
+        tone === "danger" && "text-[color:var(--color-danger-text)]"
       )}
     >
       {tone === "danger" || tone === "warn" ? (

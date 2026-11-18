@@ -82,7 +82,7 @@ export function PriorSessionsMenu({
   return (
     <div
       ref={rootRef}
-      className={`absolute top-full z-20 mt-1 w-[360px] overflow-hidden rounded-[12px] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-raised)] shadow-[var(--shadow-overlay)] ${positionClass}`}
+      className={`absolute top-full z-20 mt-1 w-[360px] overflow-hidden rounded-[12px] neu-menu ${positionClass}`}
       role="menu"
     >
       <div className="flex items-center gap-2 border-b border-[color:var(--color-border-subtle)] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--color-text-muted)]">

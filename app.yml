@@ -1,9 +1,9 @@
 version: 2
 
-name: AGENT_CANVAS_APP
-database: AGENT_CANVAS
+name: AGENT_CANVAS_PLUS_APP
+database: AGENT_CANVAS_PLUS
 schema: PUBLIC
-query_warehouse: AGENT_CANVAS_WH
+query_warehouse: AGENT_CANVAS_PLUS_WH
 
 label: Multiplayer AI canvas
 description: Shared chat with a Cortex Agent over TPC-H revenue data (caller rights).

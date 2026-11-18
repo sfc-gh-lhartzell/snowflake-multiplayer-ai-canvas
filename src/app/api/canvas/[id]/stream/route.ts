@@ -55,6 +55,9 @@ export async function GET(
 
       // 4. subscribe
       const unsubscribe = subscribe(canvasId, (ev) => send(ev));
+      // The presence.state above went out before this connection subscribed,
+      // so send the joiner their own copy.
+      send({ type: "presence.state", canvasId, payload: { users: presentUsers(canvasId) }, at: Date.now() });
 
       // 5. heartbeat (comment line keeps proxy connections alive)
       const heartbeat = setInterval(() => {

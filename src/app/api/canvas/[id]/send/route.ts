@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callerAgentClient, agentFqn } from "@/lib/agent";
+import { runTurn } from "@/lib/agent-turn";
 import { getCallerIdentity } from "@/lib/auth";
-import { getCanvas, putCanvas, deleteCanvas } from "@/lib/canvas-store";
 import {
   acquireSendLock,
   releaseSendLock,
@@ -16,10 +15,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * The canvas uses @Gil (any case) as the invocation marker. Non-mention
+ * The canvas uses @Luke (any case) as the invocation marker. Non-mention
  * messages are chat between humans and never trigger an agent turn.
  */
-const AGENT_MENTION = /@gil\b/i;
+const AGENT_MENTION = /@luke\b/i;
 
 /**
  * POST /api/canvas/:id/send
@@ -28,9 +27,9 @@ const AGENT_MENTION = /@gil\b/i;
  *
  * Flow:
  *   1. Resolve caller identity, parse body.
- *   2. If the message does NOT mention @Gil: publish user.message, append
+ *   2. If the message does NOT mention @Luke: publish user.message, append
  *      to the in-memory room-context buffer, return 200 "chat_only". No lock.
- *   3. If the message mentions @Gil:
+ *   3. If the message mentions @Luke:
  *      a. Acquire first-send-wins lock (409 if a turn is in flight).
  *      b. Publish user.message.
  *      c. Flush the room-context buffer and build a composite agent prompt
@@ -45,7 +44,7 @@ export async function POST(
   const identity = getCallerIdentity(req);
   const user = identity.user;
 
-  let body: { text?: string };
+  let body: { text?: string; openDoc?: { id?: string; title?: string; kind?: string } };
   try {
     body = await req.json();
   } catch {
@@ -86,9 +85,9 @@ export async function POST(
   }
 
   const roomLines = flushRoomContext(canvasId);
-  const agentPrompt = buildAgentPrompt({ roomLines, user, text });
+  const agentPrompt = buildAgentPrompt({ roomLines, user, text, openDoc: body.openDoc });
 
-  void runTurn({ canvasId, user, prompt: agentPrompt, req }).finally(() => {
+  void runTurn({ canvasId, user, input: `[canvas: ${canvasId}]\n\n${agentPrompt}`, req }).finally(() => {
     releaseSendLock(canvasId);
   });
 
@@ -102,108 +101,25 @@ function buildAgentPrompt(args: {
   roomLines: RoomLine[];
   user: string;
   text: string;
+  openDoc?: { id?: string; title?: string; kind?: string };
 }): string {
-  const { roomLines, user, text } = args;
+  const { roomLines, user, text, openDoc } = args;
+  const focus =
+    openDoc?.id && openDoc.title
+      ? `[open document: ${openDoc.title.replace(/[\]\n]/g, " ")} (${openDoc.kind ?? "doc"}, id ${openDoc.id})]\n`
+      : "";
   if (roomLines.length === 0) {
-    return `[${user} mentioning @Gil]: ${text}`;
+    return `${focus}[${user} mentioning @Luke]: ${text}`;
   }
   const transcript = roomLines
     .map((l) => `${l.by}: ${l.text}`)
     .join("\n");
   return [
+    ...(focus ? [focus.trimEnd()] : []),
     "[Recent room transcript, not addressed to you]",
     transcript,
     "",
-    `[${user} is now mentioning @Gil]`,
+    `[${user} is now mentioning @Luke]`,
     text,
   ].join("\n");
-}
-
-async function runTurn(args: {
-  canvasId: string;
-  user: string;
-  prompt: string;
-  req: NextRequest;
-}): Promise<void> {
-  const { canvasId, user, prompt, req } = args;
-
-  const client = callerAgentClient(req);
-
-  try {
-    console.log("[send] start", { canvasId, user, promptLen: prompt.length });
-
-    let row = await getCanvas(canvasId);
-    let threadId: number;
-
-    const createFreshThread = async () => {
-      const convo = await client.conversations.create({
-        thread: { origin_application: "canvas-app" },
-        agent: { type: "data", spec: agentFqn() },
-      });
-      threadId = Number(convo.id);
-      await putCanvas({ canvasId, threadId, createdBy: user });
-      row = { CANVAS_ID: canvasId, THREAD_ID: threadId, DISPLAY_NAME: null, CREATED_BY: user, CREATED_AT: "" };
-      return convo;
-    };
-
-    let convo;
-    if (!row) {
-      convo = await createFreshThread();
-    } else {
-      threadId = Number(row.THREAD_ID);
-      try {
-        convo = await client.conversations.attach(String(threadId));
-      } catch (attachErr) {
-        console.warn("[send] attach failed, creating fresh thread", {
-          canvasId,
-          threadId,
-          message: (attachErr as Error).message,
-        });
-        await deleteCanvas(canvasId);
-        convo = await createFreshThread();
-      }
-    }
-
-    // Prefix the prompt with a [canvas: <id>] tag so the agent can pass the
-    // canvas id to tools that need it (e.g., get_filings). The orchestration
-    // instruction teaches the agent to parse this line.
-    const taggedPrompt = `[canvas: ${canvasId}]\n\n${prompt}`;
-    const turn = await convo.send(taggedPrompt, {
-      agent: { type: "data", spec: agentFqn() },
-    });
-
-    for await (const event of turn.events()) {
-      publish(canvasId, {
-        type: "agent.event",
-        canvasId,
-        by: user,
-        payload: event,
-        at: Date.now(),
-      });
-    }
-  } catch (err) {
-    const e = err as Error & { cause?: unknown; code?: string };
-    console.error("[send] turn error", {
-      canvasId,
-      user,
-      message: e.message,
-      code: e.code,
-      cause: e.cause,
-      stack: e.stack,
-    });
-    publish(canvasId, {
-      type: "turn.error",
-      canvasId,
-      by: user,
-      payload: { message: "Gil hit an error on this turn. Try again, or ask a teammate to retry." },
-      at: Date.now(),
-    });
-  } finally {
-    publish(canvasId, {
-      type: "turn.done",
-      canvasId,
-      by: user,
-      at: Date.now(),
-    });
-  }
 }

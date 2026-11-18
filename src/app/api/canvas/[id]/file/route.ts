@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  *     - User typed `/file <text>`; store text as-is.
  *
  *   { source: "agent" }
- *     - User clicked "Let Gil write it" (or typed `/file ?`). Run a one-shot
+ *     - User clicked "Let Luke write it" (or typed `/file ?`). Run a one-shot
  *       agent turn to summarize the session, then store the agent's reply.
  *
  * The row persists after the canvas instance ends. Future canvas opens can
@@ -105,7 +105,7 @@ export async function POST(
  *
  * The prompt is tight on scope and length to keep filings scannable. We
  * include a flush of recent room chatter so the agent has something to
- * summarize even when the human talk hasn't involved @Gil this session.
+ * summarize even when the human talk hasn't involved @Luke this session.
  */
 async function summarizeViaAgent(
   req: NextRequest,

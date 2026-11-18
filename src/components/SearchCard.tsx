@@ -31,10 +31,8 @@ export function SearchCard({ query, status, citations, by, variant = "docs" }: S
   return (
     <div
       className={cn(
-        "mt-2 overflow-hidden rounded-[12px] border bg-[color:var(--color-surface-raised)]",
-        status === "errored"
-          ? "border-[color:var(--color-danger-border)]"
-          : "border-[color:var(--color-border-subtle)]"
+        "neu-raised-sm mt-2 overflow-hidden rounded-[16px]",
+        status === "errored" && "outline outline-1 outline-[color:var(--color-danger-border)]"
       )}
     >
       <button

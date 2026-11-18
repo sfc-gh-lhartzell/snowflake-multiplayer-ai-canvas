@@ -19,7 +19,7 @@ export function FilingCard({ filedBy, source, context, participants, filedAt }: 
   const when = filedAt ? new Date(filedAt).toLocaleTimeString() : null;
 
   return (
-    <div className="my-3 rounded-[12px] border border-[color:var(--color-accent-surface-border)] bg-[color:var(--color-accent-subtle)] p-4 shadow-[var(--shadow-flat)]">
+    <div className="neu-raised-sm my-3 rounded-[18px] p-4">
       <div className="mb-2 flex items-center gap-2">
         <Paperclip className="h-3.5 w-3.5 text-[color:var(--color-snow-700)]" />
         <span className="text-[12px] font-semibold text-[color:var(--color-text-primary)]">
@@ -30,7 +30,7 @@ export function FilingCard({ filedBy, source, context, participants, filedAt }: 
           <span className="ml-auto text-[11px] text-[color:var(--color-text-muted)]">{when}</span>
         ) : null}
       </div>
-      <div className="rounded-[8px] bg-[color:var(--color-surface-raised)] px-3 py-2 text-[13px] leading-relaxed text-[color:var(--color-text-primary)]">
+      <div className="neu-inset-sm rounded-[12px] px-3 py-2 text-[13px] leading-relaxed text-[color:var(--color-text-primary)]">
         {context}
       </div>
       {participants && participants.length > 0 ? (

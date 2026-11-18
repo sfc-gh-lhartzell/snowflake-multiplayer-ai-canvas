@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CanvasHeader, type ConnState } from "@/components/CanvasHeader";
+import { FileText, ArrowUpRight, PanelRightClose, Pin } from "lucide-react";
 import { MessageBubble } from "@/components/MessageBubble";
 import { ToolCard, type ToolStatus } from "@/components/ToolCard";
 import { SearchCard, type SearchCitation } from "@/components/SearchCard";
@@ -10,16 +10,10 @@ import { FilingCard } from "@/components/FilingCard";
 import { Composer } from "@/components/Composer";
 import { EmptyState } from "@/components/EmptyState";
 import { NoticeBanner } from "@/components/NoticeBanner";
-import { useKonami } from "@/lib/konami";
-import { toggleHalloween } from "@/lib/theme";
-
-interface CanvasEvent {
-  type: string;
-  canvasId: string;
-  by?: string;
-  payload?: unknown;
-  at: number;
-}
+import { SqlApprovalCard, CodePermissionCard, type SqlActionView, type PermissionView } from "@/components/ApprovalCards";
+import { useCanvas, useCanvasEvent, type CanvasEvent } from "@/lib/canvas-events";
+import { apiFetch } from "@/lib/client-api";
+import type { DocMetaClient, OpenDocRef } from "@/components/workspace/types";
 
 type ToolUse =
   | {
@@ -49,25 +43,9 @@ type ToolUse =
     };
 
 type Message =
-  | {
-      kind: "user";
-      id: string;
-      by: string;
-      text: string;
-    }
-  | {
-      kind: "agent";
-      id: string;
-      by: string;
-      text: string;
-      streaming: boolean;
-      tools: ToolUse[];
-    }
-  | {
-      kind: "system";
-      id: string;
-      text: string;
-    }
+  | { kind: "user"; id: string; by: string; text: string }
+  | { kind: "agent"; id: string; by: string; text: string; streaming: boolean; tools: ToolUse[] }
+  | { kind: "system"; id: string; text: string }
   | {
       kind: "filing";
       id: string;
@@ -76,79 +54,67 @@ type Message =
       context: string;
       participants: string[];
       filedAt: number;
-    };
+    }
+  | { kind: "action"; id: string; action: SqlActionView }
+  | { kind: "permission"; id: string; req: PermissionView }
+  | { kind: "docnote"; id: string; doc: DocMetaClient; requestedBy?: string };
 
 interface Notice {
   tone: "info" | "warn" | "danger";
   text: string;
 }
 
-export default function ChatClient({ canvasId }: { canvasId: string }) {
-  const [me, setMe] = useState<string>("…");
-  const [users, setUsers] = useState<string[]>([]);
-  const [conn, setConn] = useState<ConnState>("connecting");
+/** Tools whose inputs are long document bodies: show a short summary instead. */
+const DOC_TOOLS = new Set(["create_document", "edit_document", "comment_on_document"]);
+
+export default function ChatClient({
+  openDoc,
+  onOpenDoc,
+  onCollapse,
+}: {
+  openDoc: OpenDocRef | null;
+  onOpenDoc: (d: DocMetaClient) => void;
+  onCollapse?: () => void;
+}) {
+  const { canvasId } = useCanvas();
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState<boolean>(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [autofill, setAutofill] = useState<string | undefined>(undefined);
-  const [halloweenFlash, setHalloweenFlash] = useState<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const streamingIdRef = useRef<string | null>(null);
 
-  // --- Konami easter egg --------------------------------------------------
-  const triggerKonami = useCallback(() => {
-    const next = toggleHalloween();
-    if (next === "halloween") {
-      setHalloweenFlash(Date.now());
-    }
-  }, []);
-  useKonami(triggerKonami);
+  useCanvasEvent((e: CanvasEvent) => handleEvent(e));
 
-  // --- SSE wiring --------------------------------------------------------
+  // Show SQL proposals that are still waiting from before this page loaded.
   useEffect(() => {
-    const es = new EventSource(`/api/canvas/${encodeURIComponent(canvasId)}/stream`);
-    es.onopen = () => setConn("live");
-    es.onmessage = (ev) => {
-      try {
-        handleEvent(JSON.parse(ev.data) as CanvasEvent);
-      } catch {
-        /* ignore malformed */
-      }
-    };
-    es.onerror = () => {
-      // EventSource auto-retries. Flip to "disconnected" so the pill reads
-      // red; onopen will flip it back to "live" when the retry lands.
-      setConn("disconnected");
-    };
-    return () => es.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    apiFetch(`/api/canvas/${encodeURIComponent(canvasId)}/actions`)
+      .then((r) => (r.ok ? r.json() : { actions: [] }))
+      .then((r: { actions: SqlActionView[] }) => {
+        const waiting = r.actions.filter((a) => a.status === "pending").reverse();
+        if (waiting.length) setMessages((m) => [...waiting.map((a) => ({ kind: "action" as const, id: `act-${a.actionId}`, action: a })), ...m]);
+      })
+      .catch(() => {});
   }, [canvasId]);
 
-  const handleEvent = useCallback((e: CanvasEvent) => {
+  function handleEvent(e: CanvasEvent) {
     switch (e.type) {
-      case "presence.you":
-        setMe(e.by ?? "unknown");
-        break;
-      case "presence.state":
-        setUsers(((e.payload as { users?: string[] })?.users) ?? []);
-        break;
       case "presence.join":
         if (e.by) pushSystem(`${e.by} joined the canvas`);
         break;
       case "presence.leave":
         if (e.by) pushSystem(`${e.by} left`);
         break;
-      case "session.reset": {
+      case "session.reset":
         setMessages([
           {
             kind: "system",
             id: `s-${e.at}-${Math.random()}`,
-            text: `New session started by ${e.by ?? "someone"}. Gil's turn-by-turn memory is reset. Filings remain and can be reloaded via Load prior context.`,
+            text: `New session started by ${e.by ?? "someone"}. Luke's turn-by-turn memory is reset. Filings and documents remain.`,
           },
         ]);
         break;
-      }
       case "system.note": {
         const payload = e.payload as { text?: string };
         if (payload?.text) pushSystem(payload.text);
@@ -156,37 +122,68 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
       }
       case "user.message": {
         const payload = e.payload as { text: string };
-        setMessages((m) => [
-          ...m,
-          {
-            kind: "user",
-            id: `u-${e.at}-${e.by ?? "x"}`,
-            by: e.by ?? "unknown",
-            text: payload.text,
-          },
-        ]);
+        setMessages((m) => [...m, { kind: "user", id: `u-${e.at}-${e.by ?? "x"}`, by: e.by ?? "unknown", text: payload.text }]);
         break;
       }
       case "context.filed": {
-        const payload = e.payload as {
-          id: string;
-          source: "user" | "agent";
-          context: string;
-          participants: string[];
-          filed_at: number;
-        };
+        const p = e.payload as { id: string; source: "user" | "agent"; context: string; participants: string[]; filed_at: number };
         setMessages((m) => [
           ...m,
           {
             kind: "filing",
-            id: payload.id,
+            id: p.id,
             filedBy: e.by ?? "unknown",
-            source: payload.source,
-            context: payload.context,
-            participants: payload.participants ?? [],
-            filedAt: payload.filed_at ?? e.at,
+            source: p.source,
+            context: p.context,
+            participants: p.participants ?? [],
+            filedAt: p.filed_at ?? e.at,
           },
         ]);
+        break;
+      }
+      case "doc.created": {
+        const p = e.payload as { doc: DocMetaClient; requestedBy?: string };
+        if (e.by === "LUKE") {
+          setMessages((m) => [...m, { kind: "docnote", id: `doc-${p.doc.docId}`, doc: p.doc, requestedBy: p.requestedBy }]);
+        }
+        break;
+      }
+      case "doc.ai_op": {
+        const p = e.payload as { title: string; tool: string };
+        pushSystem(p.tool === "edit_document" ? `Luke is suggesting edits in “${p.title}”` : `Luke commented on “${p.title}”`);
+        break;
+      }
+      case "action.created": {
+        const p = e.payload as { action: SqlActionView };
+        setMessages((m) =>
+          m.some((x) => x.kind === "action" && x.action.actionId === p.action.actionId)
+            ? m
+            : [...m, { kind: "action", id: `act-${p.action.actionId}`, action: p.action }]
+        );
+        break;
+      }
+      case "action.updated": {
+        const p = e.payload as { actionId: string; status: SqlActionView["status"]; decidedBy: string; result: SqlActionView["result"] };
+        setMessages((m) =>
+          m.map((x) =>
+            x.kind === "action" && x.action.actionId === p.actionId
+              ? { ...x, action: { ...x.action, status: p.status, decidedBy: p.decidedBy, result: p.result ?? x.action.result } }
+              : x
+          )
+        );
+        break;
+      }
+      case "permission.requested": {
+        const p = e.payload as PermissionView;
+        setMessages((m) => [...m, { kind: "permission", id: `perm-${p.toolUseId}`, req: p }]);
+        setSending(false);
+        break;
+      }
+      case "permission.decided": {
+        const p = e.payload as { toolUseId: string; decision: string };
+        setMessages((m) =>
+          m.map((x) => (x.kind === "permission" && x.req.toolUseId === p.toolUseId ? { ...x, req: { ...x.req, decided: { by: e.by ?? "", decision: p.decision } } } : x))
+        );
         break;
       }
       case "agent.event": {
@@ -198,38 +195,21 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
           input?: unknown;
           tool_use_id?: string;
           content?: unknown;
-          tool_type?: string;
           status?: string;
           chart_spec?: string;
-          analyst_tool_use_id?: string;
+          permission?: unknown;
         };
         const kind = ev.event ?? ev.type;
-
         if (kind === "response.text.delta" && typeof ev.text === "string") {
           appendStreamingText(e.by ?? "assistant", ev.text);
         } else if (kind === "response.tool_use" && typeof ev.name === "string") {
-          // Suppress data_to_chart tool_use: the useful payload (spec + data) arrives on
-          // response.chart. Rendering here would create a running card we'd then have to
-          // dedupe against the chart event.
           if (ev.name === "data_to_chart") break;
-          attachToolUse(e.by ?? "assistant", {
-            name: ev.name,
-            input: ev.input,
-            tool_use_id: ev.tool_use_id,
-          });
+          if (ev.permission) break; // rendered as a CodePermissionCard
+          attachToolUse(e.by ?? "assistant", { name: ev.name, input: summarizeInput(ev.name, ev.input), tool_use_id: ev.tool_use_id });
         } else if (kind === "response.chart" && typeof ev.chart_spec === "string") {
-          attachChart(e.by ?? "assistant", {
-            tool_use_id: ev.tool_use_id,
-            chart_spec: ev.chart_spec,
-          });
+          attachChart(e.by ?? "assistant", { tool_use_id: ev.tool_use_id, chart_spec: ev.chart_spec });
         } else if (kind === "response.tool_result" && typeof ev.tool_use_id === "string") {
           completeToolUse({ tool_use_id: ev.tool_use_id, content: ev.content });
-        } else if (
-          kind === "response.tool_result.status" &&
-          typeof ev.tool_use_id === "string" &&
-          ev.status === "executing_tool"
-        ) {
-          // No-op; the tool_use event delivers the payload for Snowflake's agents.
         }
         break;
       }
@@ -239,10 +219,7 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
         break;
       case "turn.error": {
         const payload = e.payload as { message?: string };
-        setNotice({
-          tone: "danger",
-          text: `This turn didn't complete: ${payload?.message ?? "unknown error"}. Try again.`,
-        });
+        setNotice({ tone: "danger", text: `This turn didn't complete: ${payload?.message ?? "unknown error"}. Try again.` });
         finalizeStreaming();
         setSending(false);
         break;
@@ -250,7 +227,7 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
       default:
         break;
     }
-  }, []);
+  }
 
   function pushSystem(text: string) {
     setMessages((m) => [...m, { kind: "system", id: `s-${Date.now()}-${Math.random()}`, text }]);
@@ -259,24 +236,10 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
   function appendStreamingText(by: string, delta: string): void {
     setMessages((m) => {
       const id = streamingIdRef.current;
-      if (id) {
-        return m.map((msg) =>
-          msg.kind === "agent" && msg.id === id ? { ...msg, text: msg.text + delta } : msg
-        );
-      }
+      if (id) return m.map((msg) => (msg.kind === "agent" && msg.id === id ? { ...msg, text: msg.text + delta } : msg));
       const newId = `a-${Date.now()}`;
       streamingIdRef.current = newId;
-      return [
-        ...m,
-        {
-          kind: "agent",
-          id: newId,
-          by,
-          text: delta,
-          streaming: true,
-          tools: [],
-        },
-      ];
+      return [...m, { kind: "agent", id: newId, by, text: delta, streaming: true, tools: [] }];
     });
   }
 
@@ -284,26 +247,10 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
     setMessages((m) => {
       const id = streamingIdRef.current;
       const newTool = buildToolUse(tool);
-      if (id) {
-        return m.map((msg) =>
-          msg.kind === "agent" && msg.id === id
-            ? { ...msg, tools: [...msg.tools, newTool] }
-            : msg
-        );
-      }
+      if (id) return m.map((msg) => (msg.kind === "agent" && msg.id === id ? { ...msg, tools: [...msg.tools, newTool] } : msg));
       const newId = `a-${Date.now()}`;
       streamingIdRef.current = newId;
-      return [
-        ...m,
-        {
-          kind: "agent",
-          id: newId,
-          by,
-          text: "",
-          streaming: true,
-          tools: [newTool],
-        },
-      ];
+      return [...m, { kind: "agent", id: newId, by, text: "", streaming: true, tools: [newTool] }];
     });
   }
 
@@ -322,14 +269,7 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
       if (!placed) {
         const newId = `a-${Date.now()}`;
         streamingIdRef.current = newId;
-        next.push({
-          kind: "agent",
-          id: newId,
-          by,
-          text: "",
-          streaming: true,
-          tools: [buildChartToolUse(chartId, spec)],
-        });
+        next.push({ kind: "agent", id: newId, by, text: "", streaming: true, tools: [buildChartToolUse(chartId, spec)] });
       }
       return next;
     });
@@ -337,15 +277,9 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
 
   function completeToolUse(tool: { tool_use_id?: string; content?: unknown }) {
     setMessages((m) =>
-      m.map((msg) => {
-        if (msg.kind !== "agent") return msg;
-        return {
-          ...msg,
-          tools: msg.tools.map((t) =>
-            t.id === tool.tool_use_id ? completeTool(t, tool.content) : t
-          ),
-        };
-      })
+      m.map((msg) =>
+        msg.kind !== "agent" ? msg : { ...msg, tools: msg.tools.map((t) => (t.id === tool.tool_use_id ? completeTool(t, tool.content) : t)) }
+      )
     );
   }
 
@@ -356,44 +290,33 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
     setMessages((m) =>
       m.map((msg) =>
         msg.kind === "agent" && msg.id === id
-          ? {
-              ...msg,
-              streaming: false,
-              tools: msg.tools.map((t) =>
-                t.status === "running" ? { ...t, status: "completed" as ToolStatus } : t
-              ),
-            }
+          ? { ...msg, streaming: false, tools: msg.tools.map((t) => (t.status === "running" ? { ...t, status: "completed" as ToolStatus } : t)) }
           : msg
       )
     );
   }
 
-  // --- scroll ------------------------------------------------------------
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // --- send --------------------------------------------------------------
   const handleSend = useCallback(
     async (text: string) => {
-      const invokesAgent = /@gil\b/i.test(text);
-      // Only set the busy state when the agent is actually being invoked;
-      // room chat should never lock the composer or hide its placeholder.
+      const invokesAgent = /@luke\b/i.test(text);
       if (invokesAgent) setSending(true);
       setNotice(null);
       try {
-        const res = await fetch(`/api/canvas/${encodeURIComponent(canvasId)}/send`, {
+        const res = await apiFetch(`/api/canvas/${encodeURIComponent(canvasId)}/send`, {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, openDoc: openDoc ?? undefined }),
         });
         if (res.status === 409) {
           const body = await res.json();
           setNotice({
             tone: "warn",
-            text: `${body.inflight_user ?? "Someone"} is in the middle of a turn with Gil. First send wins. Try again when they're done.`,
+            text: `${body.inflight_user ?? "Someone"} is in the middle of a turn with Luke. First send wins. Try again when they're done.`,
           });
           setAutofill(text);
           setSending(false);
@@ -402,7 +325,6 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
           setAutofill(text);
           setSending(false);
         } else if (!invokesAgent) {
-          // Chat-only send: no agent turn, no streaming, so nothing to await.
           setSending(false);
         }
       } catch (err) {
@@ -411,24 +333,17 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
         setSending(false);
       }
     },
-    [canvasId]
+    [canvasId, openDoc]
   );
 
   const handleFile = useCallback(
     async (args: { text?: string; source: "user" | "agent" }) => {
       setNotice(null);
       try {
-        const res = await fetch(`/api/canvas/${encodeURIComponent(canvasId)}/file`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(args),
-        });
+        const res = await apiFetch(`/api/canvas/${encodeURIComponent(canvasId)}/file`, { method: "POST", body: JSON.stringify(args) });
         if (!res.ok) {
           const body = (await res.json().catch(() => ({}))) as { error?: string };
-          setNotice({
-            tone: "danger",
-            text: `Filing failed${body.error ? `: ${body.error}` : ` (${res.status})`}.`,
-          });
+          setNotice({ tone: "danger", text: `Filing failed${body.error ? `: ${body.error}` : ` (${res.status})`}.` });
         }
       } catch (err) {
         setNotice({ tone: "danger", text: (err as Error).message });
@@ -437,113 +352,83 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
     [canvasId]
   );
 
-  const handleNewSession = useCallback(async () => {
-    setNotice(null);
-    try {
-      const res = await fetch(`/api/canvas/${encodeURIComponent(canvasId)}/new-session`, {
+  const pinChart = useCallback(
+    async (spec: unknown) => {
+      const title = (spec as { title?: unknown })?.title;
+      const res = await apiFetch(`/api/canvas/${encodeURIComponent(canvasId)}/docs`, {
         method: "POST",
+        body: JSON.stringify({
+          kind: "chart",
+          title: typeof title === "string" ? title : "Pinned chart",
+          seed: JSON.stringify(spec, null, 2),
+        }),
       });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        setNotice({
-          tone: res.status === 409 ? "warn" : "danger",
-          text: body.error ?? `New session failed (${res.status}).`,
-        });
-      }
-    } catch (err) {
-      setNotice({ tone: "danger", text: (err as Error).message });
-    }
-  }, [canvasId]);
-
-  const handleLoadContext = useCallback(
-    async (threadId: number) => {
-      setNotice(null);
-      try {
-        const res = await fetch(
-          `/api/canvas/${encodeURIComponent(canvasId)}/load-context`,
-          {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ thread_id: threadId }),
-          }
-        );
-        if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
-          setNotice({
-            tone: res.status === 409 ? "warn" : "danger",
-            text: body.error ?? `Load context failed (${res.status}).`,
-          });
-        }
-      } catch (err) {
-        setNotice({ tone: "danger", text: (err as Error).message });
-      }
+      if (res.ok) onOpenDoc(((await res.json()) as { doc: DocMetaClient }).doc);
+      else setNotice({ tone: "danger", text: `Pin failed (${res.status}).` });
     },
-    [canvasId]
+    [canvasId, onOpenDoc]
   );
 
-  // --- render ------------------------------------------------------------
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="flex h-screen flex-col bg-[color:var(--color-surface-base)]">
-      {halloweenFlash !== null ? (
-        <span
-          key={halloweenFlash}
-          className="canvas-halloween-flash"
-          aria-hidden="true"
-          onAnimationEnd={() => setHalloweenFlash(null)}
-        >
-          🎃
-        </span>
-      ) : null}
-      <CanvasHeader
-        canvasId={canvasId}
-        me={me}
-        presence={users}
-        conn={conn}
-        onNewSession={handleNewSession}
-        onLoadContext={handleLoadContext}
-      />
-
-      <div ref={scrollRef} className="scroll-pane flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-6">
+    <aside className="flex h-full w-[clamp(320px,26vw,400px)] shrink-0 flex-col py-5 pr-5" aria-label="Chat with the room and Luke">
+      <div className="neu-raised flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px]">
+        <div className="flex items-center gap-2 px-5 pt-4 pb-2">
+          <span className="text-[13px] font-bold">Room chat</span>
+          {openDoc ? (
+            <span className="neu-inset-sm inline-flex min-w-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold text-[color:var(--color-text-secondary)]" title="Luke sees which document you have open">
+              <FileText className="h-3 w-3 shrink-0" />
+              <span className="truncate">Luke sees: {openDoc.title}</span>
+            </span>
+          ) : null}
+          {onCollapse ? (
+            <button type="button" onClick={onCollapse} className="neu-ghost ml-auto inline-flex h-8 w-8 items-center justify-center" aria-label="Hide chat">
+              <PanelRightClose className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+        <div ref={scrollRef} className="scroll-pane min-h-0 flex-1 overflow-y-auto px-4">
           {notice ? (
             <NoticeBanner tone={notice.tone} onDismiss={() => setNotice(null)}>
               {notice.text}
             </NoticeBanner>
           ) : null}
-
           {isEmpty ? (
             <EmptyState onPick={handleSend} />
           ) : (
-            <div className="pb-6">
+            <div className="pb-4">
               {messages.map((m) => {
-                if (m.kind === "system") {
-                  return <MessageBubble key={m.id} role="system" author="" text={m.text} />;
-                }
-                if (m.kind === "user") {
-                  return <MessageBubble key={m.id} role="user" author={m.by} text={m.text} />;
-                }
+                if (m.kind === "system") return <MessageBubble key={m.id} role="system" author="" text={m.text} />;
+                if (m.kind === "user") return <MessageBubble key={m.id} role="user" author={m.by} text={m.text} />;
                 if (m.kind === "filing") {
                   return (
-                    <FilingCard
+                    <FilingCard key={m.id} filedBy={m.filedBy} source={m.source} context={m.context} participants={m.participants} filedAt={m.filedAt} />
+                  );
+                }
+                if (m.kind === "action") return <SqlApprovalCard key={m.id} action={m.action} />;
+                if (m.kind === "permission") return <CodePermissionCard key={m.id} canvasId={canvasId} req={m.req} />;
+                if (m.kind === "docnote") {
+                  return (
+                    <button
                       key={m.id}
-                      filedBy={m.filedBy}
-                      source={m.source}
-                      context={m.context}
-                      participants={m.participants}
-                      filedAt={m.filedAt}
-                    />
+                      type="button"
+                      onClick={() => onOpenDoc(m.doc)}
+                      className="neu-btn neu-rise my-2 flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left"
+                    >
+                      <span className="neu-accent inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]">
+                        <FileText className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[11px] font-semibold text-[color:var(--color-text-muted)]">Luke created a {m.doc.kind === "doc" ? "doc" : m.doc.kind}</span>
+                        <span className="block truncate text-[13px] font-bold">{m.doc.title}</span>
+                      </span>
+                      <ArrowUpRight className="h-4 w-4 text-[color:var(--color-accent)]" />
+                    </button>
                   );
                 }
                 return (
-                  <MessageBubble
-                    key={m.id}
-                    role="agent"
-                    author={m.by}
-                    text={m.text}
-                    streaming={m.streaming}
-                  >
+                  <MessageBubble key={m.id} role="agent" author={m.by} text={m.text} streaming={m.streaming}>
                     {m.tools.map((t) => {
                       if (t.kind === "search") {
                         return (
@@ -559,17 +444,21 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
                       }
                       if (t.kind === "chart") {
                         if (t.status === "completed" && t.spec) {
-                          return <ChartCard key={t.id} spec={t.spec} title={t.title} />;
+                          return (
+                            <div key={t.id} className="relative">
+                              <ChartCard spec={t.spec} title={t.title} />
+                              <button
+                                type="button"
+                                onClick={() => pinChart(t.spec)}
+                                className="neu-btn absolute right-2 top-4 inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-semibold"
+                                title="Save as a chart artifact the team can edit"
+                              >
+                                <Pin className="h-3 w-3" /> Pin to canvas
+                              </button>
+                            </div>
+                          );
                         }
-                        return (
-                          <ToolCard
-                            key={t.id}
-                            toolName="Chart"
-                            friendlyName="Chart"
-                            status={t.status}
-                            by={m.by}
-                          />
-                        );
+                        return <ToolCard key={t.id} toolName="Chart" friendlyName="Chart" status={t.status} by={m.by} />;
                       }
                       return (
                         <ToolCard
@@ -578,7 +467,7 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
                           status={t.status}
                           input={t.input}
                           sql={t.sql}
-                          resultSummary={t.resultSummary}
+                          resultSummary={DOC_TOOLS.has(t.toolName) ? undefined : t.resultSummary}
                           by={m.by}
                         />
                       );
@@ -589,17 +478,19 @@ export default function ChatClient({ canvasId }: { canvasId: string }) {
             </div>
           )}
         </div>
+        <Composer onSend={handleSend} onFile={handleFile} busy={sending} autofillValue={autofill} onAutofillConsumed={() => setAutofill(undefined)} />
       </div>
-
-      <Composer
-        onSend={handleSend}
-        onFile={handleFile}
-        busy={sending}
-        autofillValue={autofill}
-        onAutofillConsumed={() => setAutofill(undefined)}
-      />
-    </div>
+    </aside>
   );
+}
+
+function summarizeInput(name: string, input: unknown): unknown {
+  if (!DOC_TOOLS.has(name) || !input || typeof input !== "object") return input;
+  const r = input as Record<string, unknown>;
+  const s = (k: string) => (typeof r[k] === "string" ? (r[k] as string) : "");
+  if (name === "create_document") return `${s("kind")}: ${s("title")} (${s("content").length.toLocaleString()} chars)`;
+  if (name === "edit_document") return `${s("operation")} in “${s("document")}”${s("find_text") ? `: “${s("find_text").slice(0, 80)}”` : ""}`;
+  return `on “${s("document")}”: ${s("comment").slice(0, 120)}`;
 }
 
 function summarize(content: unknown): string | undefined {
@@ -623,83 +514,35 @@ function classify(name: string): "analyst" | "search" | "chart" {
 function buildToolUse(tool: { name: string; input?: unknown; tool_use_id?: string }): ToolUse {
   const id = tool.tool_use_id ?? `tool-${Date.now()}-${Math.random()}`;
   const kind = classify(tool.name);
-  if (kind === "search") {
-    return {
-      kind: "search",
-      id,
-      toolName: tool.name,
-      status: "running",
-      query: readQuery(tool.input),
-    };
-  }
+  if (kind === "search") return { kind: "search", id, toolName: tool.name, status: "running", query: readQuery(tool.input) };
   if (kind === "chart") {
     const spec = extractChartSpec(readChartInput(tool.input));
-    return {
-      kind: "chart",
-      id,
-      toolName: tool.name,
-      status: spec ? "completed" : "running",
-      spec,
-      title: "Chart",
-    };
+    return { kind: "chart", id, toolName: tool.name, status: spec ? "completed" : "running", spec, title: "Chart" };
   }
-  return {
-    kind: "analyst",
-    id,
-    toolName: tool.name,
-    status: "running",
-    input: tool.input,
-  };
+  return { kind: "analyst", id, toolName: tool.name, status: "running", input: tool.input };
 }
 
 function buildChartToolUse(id: string, spec: unknown): ToolUse {
-  return {
-    kind: "chart",
-    id,
-    toolName: "chart",
-    status: spec ? "completed" : "running",
-    spec,
-    title: "Chart",
-  };
+  return { kind: "chart", id, toolName: "chart", status: spec ? "completed" : "running", spec, title: "Chart" };
 }
 
 function completeTool(prev: ToolUse, content: unknown): ToolUse {
-  if (prev.kind === "search") {
-    return {
-      ...prev,
-      status: "completed",
-      citations: extractCitations(content) ?? prev.citations,
-    };
-  }
-  if (prev.kind === "chart") {
-    return {
-      ...prev,
-      status: "completed",
-      spec: extractChartSpec(content) ?? prev.spec,
-    };
-  }
-  return {
-    ...prev,
-    status: "completed",
-    resultSummary: summarize(content),
-  };
+  if (prev.kind === "search") return { ...prev, status: "completed", citations: extractCitations(content) ?? prev.citations };
+  if (prev.kind === "chart") return { ...prev, status: "completed", spec: extractChartSpec(content) ?? prev.spec };
+  return { ...prev, status: "completed", resultSummary: summarize(content) };
 }
 
 function readQuery(input: unknown): string | undefined {
   if (!input) return undefined;
   if (typeof input === "string") return input;
   if (typeof input === "object") {
-    const asRecord = input as Record<string, unknown>;
-    const v = asRecord.query ?? asRecord.question ?? asRecord.text;
+    const r = input as Record<string, unknown>;
+    const v = r.query ?? r.question ?? r.text;
     if (typeof v === "string") return v;
   }
   return undefined;
 }
 
-/**
- * Snowflake's data_to_chart tool_use carries the Vega-Lite spec as a JSON string
- * in input.chart. Older/alt shape: input.query. Fall back to the whole input.
- */
 function readChartInput(input: unknown): unknown {
   if (!input) return undefined;
   if (typeof input === "object") {
@@ -725,7 +568,6 @@ function extractCitations(content: unknown): SearchCitation[] | undefined {
 
 function extractChartSpec(content: unknown): unknown | undefined {
   if (!content) return undefined;
-  // Common shapes: a string JSON, { spec: ... }, { chart: ... }, or the spec itself.
   if (typeof content === "string") {
     try {
       return JSON.parse(content);

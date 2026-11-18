@@ -18,17 +18,12 @@ export function Pill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium",
-        tone === "neutral" &&
-          "border-[color:var(--color-border-subtle)] bg-[color:var(--color-surface-raised)] text-[color:var(--color-text-secondary)]",
-        tone === "accent" &&
-          "border-[color:var(--color-accent-surface-border)] bg-[color:var(--color-accent-subtle)] text-[color:var(--color-accent-emphasis)]",
-        tone === "success" &&
-          "border-[color:var(--color-success-border)] bg-[color:var(--color-success-surface)] text-[color:var(--color-success-text)]",
-        tone === "warn" &&
-          "border-[color:var(--color-warn-border)] bg-[color:var(--color-warn-surface)] text-[color:var(--color-warn-text)]",
-        tone === "danger" &&
-          "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] text-[color:var(--color-danger-text)]",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-[var(--neu-inset-sm)]",
+        tone === "neutral" && "bg-[color:var(--color-surface-base)] text-[color:var(--color-text-secondary)]",
+        tone === "accent" && "bg-[color:var(--color-accent-subtle)] text-[color:var(--color-accent-emphasis)]",
+        tone === "success" && "bg-[color:var(--color-surface-base)] text-[color:var(--color-success-text)]",
+        tone === "warn" && "bg-[color:var(--color-surface-base)] text-[color:var(--color-warn-text)]",
+        tone === "danger" && "bg-[color:var(--color-surface-base)] text-[color:var(--color-danger-text)]",
         className
       )}
     >

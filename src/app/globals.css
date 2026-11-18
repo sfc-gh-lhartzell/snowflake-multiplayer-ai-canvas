@@ -53,26 +53,37 @@
   --color-danger-border:   #FECACA;
   --color-danger-hover:    #991B1B;
 
-  /* --- Semantic layer --- */
-  --color-surface-base:    var(--color-ink-50);
-  --color-surface-raised:  var(--color-ink-0);
-  --color-surface-overlay: var(--color-ink-25);
-  --color-surface-sunken:  var(--color-ink-100);
+  /* --- Semantic layer (neumorphic: one soft surface, depth from light) --- */
+  --color-surface-base:    #E7ECF3;
+  --color-surface-raised:  #E7ECF3;
+  --color-surface-overlay: #EDF1F6;
+  --color-surface-sunken:  #DEE4EC;
 
-  --color-border-subtle:   var(--color-ink-200);
-  --color-border-strong:   var(--color-ink-300);
+  --color-border-subtle:   #D2DAE5;
+  --color-border-strong:   #BCC6D4;
 
-  --color-text-primary:    var(--color-ink-900);
-  --color-text-secondary:  var(--color-ink-600);
-  --color-text-muted:      var(--color-ink-500);
+  --color-text-primary:    #1B2330;
+  --color-text-secondary:  #4A5567;
+  --color-text-muted:      #66717F;
   --color-text-inverse:    var(--color-ink-0);
 
-  --color-accent:          var(--color-snow-500);
-  --color-accent-hover:    var(--color-snow-600);
+  --color-accent:          #1FA4D8;
+  --color-accent-hover:    #1890BE;
   --color-accent-fg:       var(--color-ink-0);
-  --color-accent-subtle:   var(--color-snow-50);
-  --color-accent-emphasis: var(--color-snow-800);
-  --color-accent-surface-border: var(--color-snow-200);
+  --color-accent-subtle:   #DCEFF8;
+  --color-accent-emphasis: #0E5E83;
+  --color-accent-surface-border: #B9E0F1;
+
+  /* Neumorphic light sources: top-left highlight, bottom-right shade. */
+  --neu-hi:   rgba(255, 255, 255, 0.92);
+  --neu-lo:   rgba(150, 165, 188, 0.55);
+  --neu-raised:    7px 7px 16px var(--neu-lo), -7px -7px 16px var(--neu-hi);
+  --neu-raised-sm: 3px 3px 8px var(--neu-lo), -3px -3px 8px var(--neu-hi);
+  --neu-raised-lg: 14px 14px 32px var(--neu-lo), -12px -12px 28px var(--neu-hi);
+  --neu-inset:     inset 4px 4px 9px var(--neu-lo), inset -4px -4px 9px var(--neu-hi);
+  --neu-inset-sm:  inset 2px 2px 5px var(--neu-lo), inset -2px -2px 5px var(--neu-hi);
+  --neu-accent-grad: linear-gradient(145deg, #3CC6F4 0%, #1FA4D8 55%, #1688BA 100%);
+  --neu-accent-glow: 0 6px 16px rgba(31, 164, 216, 0.35);
 
   --color-navy:            var(--color-snow-800);
   --color-navy-strong:     var(--color-snow-900);
@@ -80,14 +91,14 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Inter", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
 
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
 
-  --shadow-flat: 0 0 0 1px var(--color-border-subtle);
-  --shadow-raised: 0 1px 2px rgba(11, 16, 22, 0.04), 0 2px 8px rgba(11, 16, 22, 0.04);
-  --shadow-overlay: 0 4px 24px rgba(11, 16, 22, 0.08), 0 1px 3px rgba(11, 16, 22, 0.06);
+  --shadow-flat: var(--neu-raised-sm);
+  --shadow-raised: var(--neu-raised);
+  --shadow-overlay: var(--neu-raised-lg);
 }
 
 /* --- Dark theme: overrides only the semantic + state-surface layers.
@@ -95,22 +106,28 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --color-surface-base:    var(--color-ink-900);
-  --color-surface-raised:  var(--color-ink-800);
-  --color-surface-overlay: var(--color-ink-700);
-  --color-surface-sunken:  #060A10;
+  --color-surface-base:    #252A33;
+  --color-surface-raised:  #252A33;
+  --color-surface-overlay: #2B313B;
+  --color-surface-sunken:  #1F232B;
 
-  --color-border-subtle:   var(--color-ink-700);
-  --color-border-strong:   var(--color-ink-600);
+  --color-border-subtle:   #343B47;
+  --color-border-strong:   #455061;
 
-  --color-text-primary:    var(--color-ink-25);
-  --color-text-secondary:  var(--color-ink-300);
-  --color-text-muted:      var(--color-ink-400);
+  --color-text-primary:    #EEF2F7;
+  --color-text-secondary:  #B8C2D0;
+  --color-text-muted:      #8D98A8;
   --color-text-inverse:    var(--color-ink-900);
 
-  --color-accent-subtle:   #0B2432;
-  --color-accent-emphasis: var(--color-snow-200);
-  --color-accent-surface-border: var(--color-snow-700);
+  --color-accent:          #35BCEB;
+  --color-accent-hover:    #5BCBF0;
+  --color-accent-subtle:   #1C3442;
+  --color-accent-emphasis: #8FDCF7;
+  --color-accent-surface-border: #26566D;
+
+  --neu-hi:   rgba(255, 255, 255, 0.055);
+  --neu-lo:   rgba(0, 0, 0, 0.5);
+  --neu-accent-glow: 0 6px 18px rgba(53, 188, 235, 0.28);
 
   --color-success-surface: #052E1F;
   --color-success-text:    #6EE7B7;
@@ -123,15 +140,17 @@
   --color-danger-border:   #7F1D1D;
   --color-danger-hover:    #DC2626;
 
-  --shadow-flat: 0 0 0 1px var(--color-border-subtle);
-  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-overlay: 0 4px 24px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-flat: var(--neu-raised-sm);
+  --shadow-raised: var(--neu-raised);
+  --shadow-overlay: var(--neu-raised-lg);
 }
 
 /* --- Halloween theme: hidden easter egg reached via the konami sequence.
  *     Pumpkin + midnight-purple palette. Still accessible (AA contrast). --- */
 [data-theme="halloween"] {
   color-scheme: dark;
+  --neu-hi:   rgba(255, 180, 120, 0.06);
+  --neu-lo:   rgba(0, 0, 0, 0.55);
 
   --color-surface-base:    #1A0B2E;
   --color-surface-raised:  #2A1246;
@@ -347,8 +366,191 @@ html, body {
 .scroll-pane::-webkit-scrollbar { width: 10px; height: 10px; }
 .scroll-pane::-webkit-scrollbar-track { background: transparent; }
 .scroll-pane::-webkit-scrollbar-thumb {
-  background: var(--color-ink-200);
+  background: var(--color-border-strong);
   border-radius: 10px;
   border: 2px solid var(--color-surface-base);
 }
-.scroll-pane::-webkit-scrollbar-thumb:hover { background: var(--color-ink-300); }
+.scroll-pane::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* ===========================================================================
+ * Neumorphic primitives
+ * Depth comes from paired light/shade shadows on one surface color. Text and
+ * state never rely on shadow alone (WCAG): each interactive state also
+ * changes color or weight, and focus gets a visible accent ring.
+ * ======================================================================== */
+.neu-raised    { background: var(--color-surface-base); box-shadow: var(--neu-raised); }
+.neu-raised-sm { background: var(--color-surface-base); box-shadow: var(--neu-raised-sm); }
+.neu-raised-lg { background: var(--color-surface-base); box-shadow: var(--neu-raised-lg); }
+.neu-inset     { background: var(--color-surface-base); box-shadow: var(--neu-inset); }
+.neu-inset-sm  { background: var(--color-surface-base); box-shadow: var(--neu-inset-sm); }
+
+.neu-btn {
+  background: var(--color-surface-base);
+  box-shadow: var(--neu-raised-sm);
+  color: var(--color-text-primary);
+  transition: box-shadow 180ms ease, transform 180ms ease, color 150ms ease;
+}
+.neu-btn:hover:not(:disabled)  { box-shadow: var(--neu-raised); color: var(--color-accent-emphasis); }
+.neu-btn:active:not(:disabled),
+.neu-btn[data-active="true"]   { box-shadow: var(--neu-inset-sm); transform: translateY(0.5px); color: var(--color-accent-emphasis); }
+
+.neu-accent {
+  background: var(--neu-accent-grad);
+  color: #fff;
+  box-shadow: var(--neu-raised-sm), var(--neu-accent-glow);
+  transition: box-shadow 180ms ease, transform 180ms ease, filter 150ms ease;
+}
+.neu-accent:hover:not(:disabled)  { filter: brightness(1.05); box-shadow: var(--neu-raised), var(--neu-accent-glow); }
+.neu-accent:active:not(:disabled) { transform: translateY(0.5px); box-shadow: inset 2px 2px 6px rgba(0,0,0,0.25); }
+
+.neu-ghost { color: var(--color-text-secondary); border-radius: 10px; transition: box-shadow 160ms ease, color 150ms ease; }
+.neu-ghost:hover:not(:disabled) { color: var(--color-text-primary); box-shadow: var(--neu-raised-sm); }
+.neu-ghost[data-active="true"]  { color: var(--color-accent-emphasis); box-shadow: var(--neu-inset-sm); }
+
+.neu-focus:focus-visible, .neu-btn:focus-visible, .neu-accent:focus-visible, .neu-ghost:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.neu-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--color-border-subtle), transparent); }
+
+/* Soft entrance for cards and panes */
+@keyframes neu-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.neu-rise { animation: neu-rise 260ms cubic-bezier(.2,.8,.2,1) both; }
+
+/* ===========================================================================
+ * Rich editor (TipTap / ProseMirror)
+ * ======================================================================== */
+.canvas-editor .ProseMirror {
+  outline: none;
+  min-height: 60vh;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+  caret-color: var(--color-accent);
+}
+.canvas-editor .ProseMirror > * + * { margin-top: 0.65em; }
+.canvas-editor .ProseMirror h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin-top: 1.1em; }
+.canvas-editor .ProseMirror h2 { font-size: 1.45rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 1.2em; }
+.canvas-editor .ProseMirror h3 { font-size: 1.15rem; font-weight: 600; margin-top: 1.1em; }
+.canvas-editor .ProseMirror ul, .canvas-editor .ProseMirror ol { padding-left: 1.4em; }
+.canvas-editor .ProseMirror ul { list-style: disc; }
+.canvas-editor .ProseMirror ol { list-style: decimal; }
+.canvas-editor .ProseMirror li > p { margin: 0.15em 0; }
+.canvas-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0.2em; }
+.canvas-editor .ProseMirror ul[data-type="taskList"] li { display: flex; gap: 0.55em; align-items: flex-start; }
+.canvas-editor .ProseMirror ul[data-type="taskList"] li > label { margin-top: 0.3em; }
+.canvas-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--color-text-muted); text-decoration: line-through; }
+.canvas-editor .ProseMirror blockquote { border-left: 3px solid var(--color-accent); padding: 0.2em 0 0.2em 1em; color: var(--color-text-secondary); }
+.canvas-editor .ProseMirror code { font-family: var(--font-mono); font-size: 0.88em; padding: 0.12em 0.4em; border-radius: 6px; box-shadow: var(--neu-inset-sm); }
+.canvas-editor .ProseMirror pre { font-family: var(--font-mono); font-size: 0.86rem; padding: 1rem 1.1rem; border-radius: 14px; background: #1B2230; color: #E6EDF6; overflow-x: auto; box-shadow: var(--neu-inset); }
+.canvas-editor .ProseMirror pre code { box-shadow: none; padding: 0; background: none; color: inherit; }
+.canvas-editor .ProseMirror a { color: var(--color-accent-emphasis); text-decoration: underline; text-underline-offset: 3px; }
+.canvas-editor .ProseMirror mark { background: #FFE58A; color: #1B2330; border-radius: 3px; padding: 0 2px; }
+.canvas-editor .ProseMirror hr { border: 0; height: 2px; margin: 1.6em 0; background: linear-gradient(90deg, transparent, var(--color-border-strong), transparent); }
+.canvas-editor .ProseMirror img { max-width: 100%; border-radius: 14px; box-shadow: var(--neu-raised-sm); }
+.canvas-editor .ProseMirror table { border-collapse: separate; border-spacing: 0; width: 100%; border-radius: 12px; overflow: hidden; box-shadow: var(--neu-raised-sm); table-layout: fixed; }
+.canvas-editor .ProseMirror th, .canvas-editor .ProseMirror td { border-bottom: 1px solid var(--color-border-subtle); border-right: 1px solid var(--color-border-subtle); padding: 0.5em 0.75em; vertical-align: top; position: relative; }
+.canvas-editor .ProseMirror th { background: var(--color-surface-sunken); font-weight: 600; text-align: left; }
+.canvas-editor .ProseMirror .selectedCell::after { content: ""; position: absolute; inset: 0; background: rgba(31,164,216,0.14); pointer-events: none; }
+.canvas-editor .ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: var(--color-accent); pointer-events: none; }
+.canvas-editor .ProseMirror p.is-editor-empty:first-child::before,
+.canvas-editor .ProseMirror .is-empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-text-muted);
+  float: left; height: 0; pointer-events: none;
+}
+
+/* Collaborative carets (CollaborationCaret) */
+.collaboration-carets__caret {
+  position: relative;
+  margin-left: -1px; margin-right: -1px;
+  border-left: 2px solid; border-right: 0;
+  word-break: normal; pointer-events: none;
+}
+.collaboration-carets__label {
+  position: absolute; top: -1.45em; left: -2px;
+  font-size: 11px; font-weight: 600; line-height: 1;
+  padding: 3px 7px; border-radius: 8px 8px 8px 2px;
+  color: #fff; white-space: nowrap; user-select: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+.collaboration-carets__selection { opacity: 0.25; }
+
+/* Suggestions (suggest mode): insertions underlined green, deletions struck red. */
+.canvas-editor .suggest-insert {
+  color: #0B7A45;
+  background: rgba(31, 157, 85, 0.12);
+  text-decoration: underline; text-decoration-color: rgba(31,157,85,.6); text-underline-offset: 3px;
+  border-radius: 3px;
+}
+.canvas-editor .suggest-delete {
+  color: #B42318;
+  background: rgba(185, 28, 28, 0.08);
+  text-decoration: line-through; text-decoration-thickness: 1.5px;
+  border-radius: 3px;
+}
+.canvas-editor .suggest-insert[data-agent="true"],
+.canvas-editor .suggest-delete[data-agent="true"] { box-shadow: inset 0 -2px 0 rgba(31,164,216,0.55); }
+[data-theme="dark"] .canvas-editor .suggest-insert { color: #6EE7A8; background: rgba(110,231,168,0.12); }
+[data-theme="dark"] .canvas-editor .suggest-delete { color: #FCA5A5; background: rgba(252,165,165,0.10); }
+.canvas-editor .suggest-focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+
+/* Comment anchors */
+.canvas-editor ::selection { background: rgba(31, 164, 216, 0.28); }
+[data-theme="dark"] .canvas-editor ::selection { background: rgba(53, 188, 235, 0.32); }
+.canvas-editor .comment-anchor {
+  background: rgba(255, 196, 0, 0.22);
+  border-bottom: 2px solid rgba(230, 160, 0, 0.75);
+  cursor: pointer;
+  border-radius: 2px;
+}
+.canvas-editor .comment-anchor[data-resolved="true"] { background: none; border-bottom: 1px dashed var(--color-border-strong); }
+.canvas-editor .comment-anchor.comment-active { background: rgba(255, 196, 0, 0.45); }
+
+/* Slide editor: every --- in the deck starts a new slide. */
+.slides-editor .ProseMirror hr {
+  height: 0; margin: 2.2em -1rem; background: none;
+  border-top: 2px dashed var(--color-accent-surface-border);
+  position: relative; overflow: visible;
+}
+.slides-editor .ProseMirror hr::after {
+  content: "NEW SLIDE"; position: absolute; left: 50%; top: -0.75em; transform: translateX(-50%);
+  font-size: 10px; letter-spacing: 0.14em; font-weight: 700; color: var(--color-accent-emphasis);
+  background: var(--color-surface-base); padding: 0 10px;
+}
+
+/* Rendered slide (thumbnail + present mode) */
+.slide-frame {
+  aspect-ratio: 16 / 9; width: 100%;
+  border-radius: 18px; overflow: hidden;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(60,198,244,0.16), transparent 55%),
+    radial-gradient(90% 120% at 100% 100%, rgba(22,136,186,0.12), transparent 60%),
+    var(--color-surface-base);
+  box-shadow: var(--neu-raised);
+  color: var(--color-text-primary);
+  container-type: inline-size;
+}
+.slide-body { padding: 7cqw 8cqw; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 2.2cqw; font-size: 2.3cqw; line-height: 1.5; }
+.slide-body h1 { font-size: 5.6cqw; font-weight: 750; letter-spacing: -0.02em; line-height: 1.1; }
+.slide-body h2 { font-size: 4.2cqw; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; }
+.slide-body h3 { font-size: 3cqw; font-weight: 650; }
+.slide-body ul { list-style: disc; padding-left: 1.2em; }
+.slide-body ol { list-style: decimal; padding-left: 1.2em; }
+.slide-body li { margin: 0.4em 0; }
+.slide-body strong { color: var(--color-accent-emphasis); }
+.slide-body img { max-height: 45cqw; border-radius: 1.4cqw; }
+.slide-body table { border-collapse: collapse; font-size: 0.85em; }
+.slide-body th, .slide-body td { border-bottom: 1px solid var(--color-border-subtle); padding: 0.35em 0.8em; text-align: left; }
+
+/* CodeMirror inside neumorphic panes */
+.cm-host .cm-editor { height: 100%; font-size: 13.5px; background: transparent; }
+.cm-host .cm-editor.cm-focused { outline: none; }
+.cm-host .cm-scroller { font-family: var(--font-mono); }
+.cm-host .cm-gutters { background: transparent; border-right: 1px solid var(--color-border-subtle); color: var(--color-text-muted); }
+.cm-host .cm-activeLine, .cm-host .cm-activeLineGutter { background: rgba(31,164,216,0.06); }
+.cm-host .cm-ySelectionInfo { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 6px; opacity: 1 !important; font-family: var(--font-sans); }
+
+/* Tooltip-ish floating menus */
+.neu-menu { background: var(--color-surface-overlay); box-shadow: var(--neu-raised-lg); border-radius: 16px; }

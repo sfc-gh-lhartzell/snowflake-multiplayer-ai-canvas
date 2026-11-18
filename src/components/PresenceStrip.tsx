@@ -13,7 +13,7 @@ export function PresenceStrip({ users, me }: { users: string[]; me: string }) {
         {unique.slice(0, 5).map((u) => (
           <div
             key={u}
-            className="ring-2 ring-[color:var(--color-surface-raised)] rounded-full"
+            className="ring-2 ring-[color:var(--color-surface-base)] rounded-full"
           >
             <Avatar name={u} size={26} online title={u === me ? `${u} (you)` : u} />
           </div>

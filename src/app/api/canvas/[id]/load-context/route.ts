@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
  * session's stream. The user does not have to click send.
  *
  * The prompt is also broadcast as a visible user.message so every participant
- * sees exactly what triggered Gil's summary.
+ * sees exactly what triggered Luke's summary.
  */
 export async function POST(
   req: NextRequest,
@@ -81,7 +81,7 @@ export async function POST(
     canvasId,
     by: user,
     payload: {
-      text: `${user} loaded context from Session #${threadIdNum} (${filings.length} filing${filings.length === 1 ? "" : "s"}). Gil is drafting a brief…`,
+      text: `${user} loaded context from Session #${threadIdNum} (${filings.length} filing${filings.length === 1 ? "" : "s"}). Luke is drafting a brief…`,
     },
     at,
   });
@@ -188,7 +188,7 @@ async function runLoadTurn(args: {
       type: "turn.error",
       canvasId,
       by: user,
-      payload: { message: "Gil hit an error loading prior context. Try again, or start a fresh session." },
+      payload: { message: "Luke hit an error loading prior context. Try again, or start a fresh session." },
       at: Date.now(),
     });
   } finally {

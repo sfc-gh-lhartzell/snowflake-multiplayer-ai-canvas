@@ -28,11 +28,10 @@ export function ChartCard({ spec, title, caption }: ChartCardProps) {
   return (
     <div
       className={cn(
-        "mt-2 overflow-hidden rounded-[12px] border bg-[color:var(--color-surface-raised)]",
-        "border-[color:var(--color-border-subtle)]"
+        "neu-raised-sm mt-2 overflow-hidden rounded-[16px]"
       )}
     >
-      <div className="flex items-center gap-2 border-b border-[color:var(--color-border-subtle)] px-3 py-2">
+      <div className="flex items-center gap-2 px-3 py-2">
         <ChartIcon />
         <span className="text-[13px] font-medium text-[color:var(--color-text-primary)]">
           {title ?? "Chart"}

@@ -10,13 +10,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Agent Canvas",
-  description: "A shared workspace to analyze your data together with an agent.",
+  title: "Agent Canvas Plus",
+  description: "Docs, slides, and artifacts your team builds together with an agent, inside Snowflake.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         {/* Set data-theme on <html> before React hydrates so there's no
             flash of light theme on a dark system. */}
