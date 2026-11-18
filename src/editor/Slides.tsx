@@ -4,11 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 
-/** Split editor HTML into slides at each horizontal rule. */
+/** Split editor HTML into slides at each horizontal rule (same indexing as the editor's slide frame). */
 export function splitSlides(html: string): string[] {
-  const parts = html.split(/<hr\s*\/?>/i).map((s) => s.trim());
-  const slides = parts.filter((s) => s.replace(/<p>\s*<\/p>/g, "").trim().length > 0);
-  return slides.length ? slides : ["<h1>Untitled slide</h1>"];
+  const slides = html.split(/<hr\s*\/?>/i).map((s) => s.trim());
+  const empty = slides.every((s) => !s.replace(/<p>\s*<\/p>/g, "").trim());
+  return empty ? ["<h1>Untitled slide</h1>"] : slides;
 }
 
 /** Strip suggestion/comment wrappers so slides show the proposed result cleanly. */

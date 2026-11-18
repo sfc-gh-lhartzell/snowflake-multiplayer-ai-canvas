@@ -84,6 +84,10 @@ function Shell() {
     } else if (e.type === "doc.viewers") {
       const p = e.payload as { docId: string; users: string[] };
       setViewers((v) => ({ ...v, [p.docId]: p.users }));
+    } else if (e.type === "doc.ai_op") {
+      // Luke's edits apply in an open editor; open the doc for whoever asked, so they land right away.
+      const p = e.payload as { doc?: DocMetaClient; requestedBy?: string };
+      if (p.doc && p.requestedBy === me) open(p.doc);
     } else if (e.type === "doc.created") {
       const p = e.payload as { doc: DocMetaClient; open?: boolean; requestedBy?: string };
       setDocs((ds) => (ds.some((d) => d.docId === p.doc.docId) ? ds : [p.doc, ...ds]));

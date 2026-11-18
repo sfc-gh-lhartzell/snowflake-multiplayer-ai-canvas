@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRoom, claimSeed, claimAiOp } from "@/lib/doc-hub";
+import { getRoom, claimSeed, claimAiOp, reportAiOp } from "@/lib/doc-hub";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +24,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ docId: str
   if (body.kind === "op" && body.opId) {
     const op = claimAiOp(room, body.opId, body.conn);
     return NextResponse.json({ granted: op !== null, op });
+  }
+  // The claimant reports the outcome of an op it applied.
+  if (body.kind === "done" && body.opId) {
+    const r = body as { ok?: boolean; text?: string };
+    reportAiOp(room, body.opId, r.ok === true, typeof r.text === "string" ? r.text : "");
+    return NextResponse.json({ ok: true });
   }
   return NextResponse.json({ error: "invalid_kind" }, { status: 400 });
 }

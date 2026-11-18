@@ -214,12 +214,47 @@ function resolve(tr: Transaction, match: (sid: string) => boolean, accept: boole
     }
   });
   if (!ranges.length) return false;
+  const start = tr.steps.length;
+  const emptied: number[] = [];
   for (const r of ranges.reverse()) {
     const keep = (r.type === "insert") === accept;
     if (keep) tr.removeMark(r.from, r.to, r.mark);
-    else tr.delete(r.from, r.to);
+    else {
+      // Ranges run high to low, so this position is still in the original document's coordinates.
+      emptied.push(tr.doc.resolve(r.from).before());
+      tr.delete(r.from, r.to);
+    }
   }
+  dropEmptiedBlocks(tr, start, emptied);
   return true;
+}
+
+const LIST_WRAPPERS = new Set(["listItem", "taskItem", "bulletList", "orderedList", "taskList"]);
+
+/**
+ * A resolved suggestion that removed all of a block's text leaves an empty
+ * heading, paragraph, or bullet behind. Remove those blocks (and list items
+ * and lists they were the only child of), keeping at least one block.
+ */
+function dropEmptiedBlocks(tr: Transaction, start: number, origPositions: number[]) {
+  const map = tr.mapping.slice(start);
+  const positions = Array.from(new Set(origPositions.map((p) => map.map(p, 1)))).sort((a, b) => b - a);
+  for (const pos of positions) {
+    if (pos < 0 || pos > tr.doc.content.size) continue;
+    const node = tr.doc.nodeAt(pos);
+    if (!node || !node.isTextblock || node.content.size > 0) continue;
+    const $pos = tr.doc.resolve(pos);
+    let from = pos;
+    let to = pos + node.nodeSize;
+    for (let d = $pos.depth; d > 0; d--) {
+      const parent = $pos.node(d);
+      if (!LIST_WRAPPERS.has(parent.type.name) || parent.childCount !== 1) break;
+      from = $pos.before(d);
+      to = $pos.after(d);
+    }
+    if (to - from >= tr.doc.content.size) continue; // never empty the document
+    tr.delete(from, to);
+  }
 }
 
 export const SuggestMode = Extension.create<Record<string, never>, SuggestModeStorage>({

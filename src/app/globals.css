@@ -508,7 +508,23 @@ html, body {
 .canvas-editor .comment-anchor[data-resolved="true"] { background: none; border-bottom: 1px dashed var(--color-border-strong); }
 .canvas-editor .comment-anchor.comment-active { background: rgba(255, 196, 0, 0.45); }
 
-/* Slide editor: every --- in the deck starts a new slide. */
+/* Slide editor: one slide at a time in a fixed 16:9 frame (see editor/slide-focus.ts). */
+.slides-editor .slide-off { display: none !important; }
+.slides-editor.slide-frame { cursor: text; }
+.slides-editor .slide-body { overflow: hidden; }
+.slides-editor .slide-body > .ProseMirror { display: flex; flex-direction: column; gap: 2.2cqw; min-height: 1em; }
+.canvas-editor.slides-editor .ProseMirror { min-height: 1em; font-size: 2.3cqw; line-height: 1.5; }
+.canvas-editor.slides-editor .ProseMirror > * { margin: 0; }
+.canvas-editor.slides-editor .ProseMirror h1 { font-size: 5.6cqw; font-weight: 750; letter-spacing: -0.02em; line-height: 1.1; }
+.canvas-editor.slides-editor .ProseMirror h2 { font-size: 4.2cqw; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; }
+.canvas-editor.slides-editor .ProseMirror h3 { font-size: 3cqw; font-weight: 650; }
+.canvas-editor.slides-editor .ProseMirror p,
+.canvas-editor.slides-editor .ProseMirror li,
+.canvas-editor.slides-editor .ProseMirror td,
+.canvas-editor.slides-editor .ProseMirror th { font-size: 2.3cqw; line-height: 1.5; }
+.canvas-editor.slides-editor .ProseMirror li { margin: 0.4em 0; }
+.canvas-editor.slides-editor .ProseMirror li p { margin: 0; }
+.canvas-editor.slides-editor .ProseMirror img { max-height: 45cqw; }
 .slides-editor .ProseMirror hr {
   height: 0; margin: 2.2em -1rem; background: none;
   border-top: 2px dashed var(--color-accent-surface-border);

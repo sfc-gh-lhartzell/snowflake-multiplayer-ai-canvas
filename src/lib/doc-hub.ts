@@ -62,26 +62,17 @@ interface HubState {
 }
 
 const KEY = "__CANVAS_DOC_HUB__";
-// Each module evaluation gets its own token. In dev, hot reload re-evaluates
-// this file with a fresh copy of Yjs; rooms built by the old copy can't take
-// updates from the new one, so we start over (state reloads from DOCS).
-const MODULE_TOKEN = Symbol("doc-hub");
+// One hub per process. Hub state lives on globalThis and is only touched by
+// the implementation installed there (see the bottom of this file), so every
+// route bundle that includes this module shares the same rooms and the same
+// copy of Yjs.
 function hub(): HubState {
-  const g = globalThis as unknown as Record<string, (HubState & { token?: symbol }) | undefined>;
-  if (!g[KEY] || g[KEY]!.token !== MODULE_TOKEN) {
-    const old = g[KEY];
-    if (old) {
-      for (const room of old.rooms.values()) {
-        if (room.saveTimer) clearTimeout(room.saveTimer);
-        for (const c of room.conns.values()) c.send({ t: "reload" });
-      }
-    }
-    g[KEY] = { rooms: new Map(), loading: new Map(), token: MODULE_TOKEN };
-  }
+  const g = globalThis as unknown as Record<string, HubState | undefined>;
+  if (!g[KEY]) g[KEY] = { rooms: new Map(), loading: new Map() };
   return g[KEY]!;
 }
 
-export async function getRoom(docId: string): Promise<Room | undefined> {
+async function getRoomImpl(docId: string): Promise<Room | undefined> {
   const h = hub();
   const existing = h.rooms.get(docId);
   if (existing) return existing;
@@ -176,7 +167,7 @@ function broadcast(room: Room, msg: unknown) {
 
 // ----- connections ---------------------------------------------------------
 
-export function connect(room: Room, connId: string, user: string, send: Send): void {
+function connectImpl(room: Room, connId: string, user: string, send: Send): void {
   if (room.unloadTimer) {
     clearTimeout(room.unloadTimer);
     room.unloadTimer = null;
@@ -193,7 +184,7 @@ export function connect(room: Room, connId: string, user: string, send: Send): v
   });
 }
 
-export function disconnect(room: Room, connId: string): void {
+function disconnectImpl(room: Room, connId: string): void {
   const c = room.conns.get(connId);
   room.conns.delete(connId);
   announceViewers(room);
@@ -211,23 +202,23 @@ export function disconnect(room: Room, connId: string): void {
   }
 }
 
-export function applyClientUpdate(room: Room, connId: string, updateB64: string, user: string): void {
+function applyClientUpdateImpl(room: Room, connId: string, updateB64: string, user: string): void {
   room.lastEditor = user;
   Y.applyUpdate(room.ydoc, Buffer.from(updateB64, "base64"), connId);
 }
 
-export function applyClientAwareness(room: Room, connId: string, updateB64: string): void {
+function applyClientAwarenessImpl(room: Room, connId: string, updateB64: string): void {
   applyAwarenessUpdate(room.awareness, Buffer.from(updateB64, "base64"), connId);
 }
 
 /** The first editor to open a fresh doc writes its seed content; others wait for the sync. */
-export function claimSeed(room: Room): string | null {
+function claimSeedImpl(room: Room): string | null {
   if (room.seedClaimed) return null;
   room.seedClaimed = true;
   return room.meta.seed ?? null;
 }
 
-export function roomMeta(room: Room): DocFull {
+function roomMetaImpl(room: Room): DocFull {
   return room.meta;
 }
 
@@ -246,7 +237,7 @@ function announceViewers(room: Room) {
 }
 
 /** docId -> users with it open, for every loaded doc in a canvas. Sent to each canvas joiner. */
-export function docViewers(canvasId: string): Record<string, string[]> {
+function docViewersImpl(canvasId: string): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const room of hub().rooms.values()) {
     if (room.meta.canvasId !== canvasId) continue;
@@ -256,7 +247,7 @@ export function docViewers(canvasId: string): Record<string, string[]> {
   return out;
 }
 
-export function setRoomTitle(docId: string, title: string) {
+function setRoomTitleImpl(docId: string, title: string) {
   const room = hub().rooms.get(docId);
   if (room) room.meta = { ...room.meta, title };
 }
@@ -269,8 +260,8 @@ export function setRoomTitle(docId: string, title: string) {
  * Yjs sync carries the result to everyone else. If nobody has the doc open,
  * the op waits and is applied by the next editor that opens it.
  */
-export async function enqueueAiOp(docId: string, op: AiOp): Promise<boolean> {
-  const room = await getRoom(docId);
+async function enqueueAiOpImpl(docId: string, op: AiOp): Promise<boolean> {
+  const room = await getRoomImpl(docId);
   if (!room) return false;
   if (room.aiOps.some((o) => o.opId === op.opId)) return true;
   room.aiOps.push(op);
@@ -279,14 +270,90 @@ export async function enqueueAiOp(docId: string, op: AiOp): Promise<boolean> {
   return true;
 }
 
-export function claimAiOp(room: Room, opId: string, connId: string): AiOp | null {
+function claimAiOpImpl(room: Room, opId: string, connId: string): AiOp | null {
   const op = room.aiOps.find((o) => o.opId === opId);
   if (!op || op.claimedBy) return null;
   op.claimedBy = connId;
   broadcast(room, { t: "ai.op.claimed", opId });
+  // Keep the pre-edit state as a version, so any edit of Luke's can be rolled back.
+  if (op.tool === "edit_document") {
+    const state = Buffer.from(Y.encodeStateAsUpdate(room.ydoc)).toString("base64");
+    void addVersion(room.docId, state, null, "before Luke's edit").catch((err) =>
+      console.error("[doc-hub] pre-edit version failed", { docId: room.docId, message: (err as Error).message })
+    );
+  }
   return op;
 }
 
-export function openRooms(): string[] {
+/** The editor that applied one of Luke's ops reports how it went; the room sees it in chat. */
+function reportAiOpImpl(room: Room, opId: string, ok: boolean, text: string) {
+  const op = room.aiOps.find((o) => o.opId === opId);
+  publish(room.meta.canvasId, {
+    type: "doc.ai_op.done",
+    canvasId: room.meta.canvasId,
+    by: "LUKE",
+    payload: { opId, docId: room.docId, title: room.meta.title, tool: op?.tool, ok, text: text.slice(0, 300) },
+    at: Date.now(),
+  });
+}
+
+function openRoomsImpl(): string[] {
   return Array.from(hub().rooms.keys());
 }
+
+// ----- process-wide singleton ------------------------------------------------
+//
+// Next.js bundles server modules per route, so a production build has several
+// copies of this module (and of Yjs). The first copy to load installs its
+// functions here; every copy calls through them, so rooms built by one copy of
+// Yjs are only ever touched by that copy. In dev, a hot reload that changes this
+// file installs the new code: the signature below is derived from the source,
+// so identical copies agree and edited ones take over (and reset the rooms).
+// In production the first copy always wins (copies can be minified differently).
+
+const IMPL = { getRoom: getRoomImpl, connect: connectImpl, disconnect: disconnectImpl, applyClientUpdate: applyClientUpdateImpl, applyClientAwareness: applyClientAwarenessImpl, claimSeed: claimSeedImpl, roomMeta: roomMetaImpl, docViewers: docViewersImpl, setRoomTitle: setRoomTitleImpl, enqueueAiOp: enqueueAiOpImpl, claimAiOp: claimAiOpImpl, reportAiOp: reportAiOpImpl, openRooms: openRoomsImpl };
+type Impl = typeof IMPL;
+const IMPL_KEY = "__CANVAS_DOC_HUB_IMPL__";
+
+function signature(): string {
+  const src = [...Object.values(IMPL), loadRoom, flush, scheduleSave, broadcast, announceViewers, viewersOf].map(String).join("\n");
+  let h = 0;
+  for (let i = 0; i < src.length; i++) h = (h * 31 + src.charCodeAt(i)) | 0;
+  return `${src.length}:${h}`;
+}
+
+function impl(): Impl {
+  const g = globalThis as unknown as Record<string, { sig: string; impl: Impl } | undefined>;
+  const sig = signature();
+  const cur = g[IMPL_KEY];
+  if (!cur) {
+    g[IMPL_KEY] = { sig, impl: IMPL };
+  } else if (cur.sig !== sig && process.env.NODE_ENV !== "production") {
+    // Changed code (dev hot reload): drop rooms built by the old code; they reload from DOCS.
+    const old = (globalThis as unknown as Record<string, HubState | undefined>)[KEY];
+    if (old) {
+      for (const room of old.rooms.values()) {
+        if (room.saveTimer) clearTimeout(room.saveTimer);
+        for (const c of room.conns.values()) c.send({ t: "reload" });
+      }
+      delete (globalThis as unknown as Record<string, unknown>)[KEY];
+    }
+    g[IMPL_KEY] = { sig, impl: IMPL };
+  }
+  return g[IMPL_KEY]!.impl;
+}
+impl();
+
+export const getRoom: Impl["getRoom"] = (...args: Parameters<Impl["getRoom"]>) => (impl().getRoom as (...a: unknown[]) => ReturnType<Impl["getRoom"]>)(...args);
+export const connect: Impl["connect"] = (...args: Parameters<Impl["connect"]>) => (impl().connect as (...a: unknown[]) => ReturnType<Impl["connect"]>)(...args);
+export const disconnect: Impl["disconnect"] = (...args: Parameters<Impl["disconnect"]>) => (impl().disconnect as (...a: unknown[]) => ReturnType<Impl["disconnect"]>)(...args);
+export const applyClientUpdate: Impl["applyClientUpdate"] = (...args: Parameters<Impl["applyClientUpdate"]>) => (impl().applyClientUpdate as (...a: unknown[]) => ReturnType<Impl["applyClientUpdate"]>)(...args);
+export const applyClientAwareness: Impl["applyClientAwareness"] = (...args: Parameters<Impl["applyClientAwareness"]>) => (impl().applyClientAwareness as (...a: unknown[]) => ReturnType<Impl["applyClientAwareness"]>)(...args);
+export const claimSeed: Impl["claimSeed"] = (...args: Parameters<Impl["claimSeed"]>) => (impl().claimSeed as (...a: unknown[]) => ReturnType<Impl["claimSeed"]>)(...args);
+export const roomMeta: Impl["roomMeta"] = (...args: Parameters<Impl["roomMeta"]>) => (impl().roomMeta as (...a: unknown[]) => ReturnType<Impl["roomMeta"]>)(...args);
+export const docViewers: Impl["docViewers"] = (...args: Parameters<Impl["docViewers"]>) => (impl().docViewers as (...a: unknown[]) => ReturnType<Impl["docViewers"]>)(...args);
+export const setRoomTitle: Impl["setRoomTitle"] = (...args: Parameters<Impl["setRoomTitle"]>) => (impl().setRoomTitle as (...a: unknown[]) => ReturnType<Impl["setRoomTitle"]>)(...args);
+export const enqueueAiOp: Impl["enqueueAiOp"] = (...args: Parameters<Impl["enqueueAiOp"]>) => (impl().enqueueAiOp as (...a: unknown[]) => ReturnType<Impl["enqueueAiOp"]>)(...args);
+export const claimAiOp: Impl["claimAiOp"] = (...args: Parameters<Impl["claimAiOp"]>) => (impl().claimAiOp as (...a: unknown[]) => ReturnType<Impl["claimAiOp"]>)(...args);
+export const reportAiOp: Impl["reportAiOp"] = (...args: Parameters<Impl["reportAiOp"]>) => (impl().reportAiOp as (...a: unknown[]) => ReturnType<Impl["reportAiOp"]>)(...args);
+export const openRooms: Impl["openRooms"] = (...args: Parameters<Impl["openRooms"]>) => (impl().openRooms as (...a: unknown[]) => ReturnType<Impl["openRooms"]>)(...args);

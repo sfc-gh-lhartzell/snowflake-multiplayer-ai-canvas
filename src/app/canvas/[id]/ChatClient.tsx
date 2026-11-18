@@ -14,6 +14,7 @@ import { SqlApprovalCard, CodePermissionCard, type SqlActionView, type Permissio
 import { useCanvas, useCanvasEvent, type CanvasEvent } from "@/lib/canvas-events";
 import { apiFetch } from "@/lib/client-api";
 import type { DocMetaClient, OpenDocRef } from "@/components/workspace/types";
+import { CocoArt, CocoSled } from "@/components/coco/Coco";
 
 type ToolUse =
   | {
@@ -57,7 +58,8 @@ type Message =
     }
   | { kind: "action"; id: string; action: SqlActionView }
   | { kind: "permission"; id: string; req: PermissionView }
-  | { kind: "docnote"; id: string; doc: DocMetaClient; requestedBy?: string };
+  | { kind: "docnote"; id: string; doc: DocMetaClient; requestedBy?: string }
+  | { kind: "aiop"; id: string; opId: string; tool: string; title: string; doc?: DocMetaClient; status: "pending" | "done" | "failed"; text?: string };
 
 interface Notice {
   tone: "info" | "warn" | "danger";
@@ -149,8 +151,19 @@ export default function ChatClient({
         break;
       }
       case "doc.ai_op": {
-        const p = e.payload as { title: string; tool: string };
-        pushSystem(p.tool === "edit_document" ? `Luke is suggesting edits in “${p.title}”` : `Luke commented on “${p.title}”`);
+        const p = e.payload as { title: string; tool: string; opId: string; doc?: DocMetaClient };
+        setMessages((m) =>
+          m.some((x) => x.kind === "aiop" && x.opId === p.opId)
+            ? m
+            : [...m, { kind: "aiop", id: `op-${p.opId}`, opId: p.opId, tool: p.tool, title: p.title, doc: p.doc, status: "pending" }]
+        );
+        break;
+      }
+      case "doc.ai_op.done": {
+        const p = e.payload as { opId: string; ok: boolean; text: string };
+        setMessages((m) =>
+          m.map((x) => (x.kind === "aiop" && x.opId === p.opId ? { ...x, status: p.ok ? "done" : "failed", text: p.text } : x))
+        );
         break;
       }
       case "action.created": {
@@ -408,6 +421,7 @@ export default function ChatClient({
                 }
                 if (m.kind === "action") return <SqlApprovalCard key={m.id} action={m.action} />;
                 if (m.kind === "permission") return <CodePermissionCard key={m.id} canvasId={canvasId} req={m.req} />;
+                if (m.kind === "aiop") return <AiOpCard key={m.id} m={m} onOpen={m.doc ? () => onOpenDoc(m.doc!) : undefined} />;
                 if (m.kind === "docnote") {
                   return (
                     <button
@@ -580,4 +594,43 @@ function extractChartSpec(content: unknown): unknown | undefined {
     return rec.spec ?? rec.chart ?? rec.vega_lite ?? content;
   }
   return content;
+}
+
+type AiOpMessage = Extract<Message, { kind: "aiop" }>;
+
+/** Luke's edit or comment on a doc: pending (sledding) until the editor that applied it reports back. */
+function AiOpCard({ m, onOpen }: { m: AiOpMessage; onOpen?: () => void }) {
+  const edit = m.tool === "edit_document";
+  const head =
+    m.status === "pending"
+      ? edit
+        ? `Luke is editing \u201c${m.title}\u201d`
+        : `Luke is commenting on \u201c${m.title}\u201d`
+      : m.status === "failed"
+        ? `Luke's edit to \u201c${m.title}\u201d didn't apply`
+        : `Luke ${m.text ?? "edited"} in \u201c${m.title}\u201d`;
+  const sub =
+    m.status === "pending"
+      ? "Lands as soon as someone has the doc open."
+      : m.status === "failed"
+        ? `He ${m.text ?? "couldn't apply it"}. Ask him to try again with the current text.`
+        : edit
+          ? "Review it in the doc's Suggestions tab."
+          : null;
+  return (
+    <div className="neu-raised-sm neu-rise my-2 flex items-center gap-3 rounded-[16px] px-3 py-2.5">
+      <span className="flex h-10 w-12 shrink-0 items-center justify-center">
+        {m.status === "pending" ? <CocoSled size={44} /> : <CocoArt name={m.status === "failed" ? "slip" : "success"} size={40} replay={false} />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12.5px] font-bold leading-snug">{head}</span>
+        {sub ? <span className="block text-[11.5px] text-[color:var(--color-text-muted)]">{sub}</span> : null}
+      </span>
+      {onOpen ? (
+        <button type="button" onClick={onOpen} className="neu-btn inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-[12px] font-semibold text-[color:var(--color-accent-emphasis)]">
+          Open <ArrowUpRight className="h-3.5 w-3.5" />
+        </button>
+      ) : null}
+    </div>
+  );
 }

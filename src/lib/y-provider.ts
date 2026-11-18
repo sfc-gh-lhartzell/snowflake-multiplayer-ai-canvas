@@ -194,6 +194,14 @@ export class SseYProvider {
     return res.json();
   }
 
+  /** Tell the room how one of Luke's ops went (after this connection applied it). */
+  async report(opId: string, ok: boolean, text: string) {
+    await apiFetch(`/api/docs/${encodeURIComponent(this.docId)}/claim`, {
+      method: "POST",
+      body: JSON.stringify({ conn: this.connId, kind: "done", opId, ok, text }),
+    }).catch(() => {});
+  }
+
   private onUnload = () => {
     removeAwarenessStates(this.awareness, [this.doc.clientID], "unload");
     this.flush();

@@ -92,8 +92,38 @@ function normalizeWithMap(s: string): { norm: string; map: number[] } {
   return { norm, map };
 }
 
-/** Find text in the document. Exact first, then case/whitespace-insensitive. */
+/**
+ * Luke often quotes the markdown he read (`# Title`, `- item`, `**bold**`, `---`).
+ * The editor's text has none of that syntax, so reduce a quote to its words.
+ */
+export function stripMarkdown(md: string): string {
+  return md
+    .split("\n")
+    .filter((line) => !/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line))
+    .map((line) =>
+      line
+        .replace(/^\s*#{1,6}\s+/, "")
+        .replace(/^\s*>\s?/, "")
+        .replace(/^\s*[-*+]\s+\[[ xX]\]\s+/, "")
+        .replace(/^\s*([-*+]|\d+[.)])\s+/, "")
+        .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+        .replace(/(\*\*|__|~~|`)/g, "")
+        .replace(/(^|\W)[*_]([^*_]+)[*_](?=\W|$)/g, "$1$2")
+        .replace(/^\s*\|/, "")
+        .replace(/\|\s*$/, "")
+        .replace(/\s*\|\s*/g, " ")
+    )
+    .filter((line) => !/^[\s:|-]*$/.test(line) || !line.includes("-"))
+    .join("\n")
+    .trim();
+}
+
+/** Find text in the document. Exact first, then case/whitespace-insensitive, then with markdown syntax removed. */
 export function findTextRange(doc: PMNode, needle: string): { from: number; to: number } | null {
+  return findPlain(doc, needle) ?? findPlain(doc, stripMarkdown(needle));
+}
+
+function findPlain(doc: PMNode, needle: string): { from: number; to: number } | null {
   const target = needle.replace(/^[\s*_#>-]+|[\s*_]+$/g, "");
   if (!target) return null;
   const idx = buildIndex(doc);
@@ -124,18 +154,48 @@ export interface EditOpInput {
   commentId?: string;
 }
 
-/** Returns a short human description of what happened (for the room). */
-export function applyEditOp(editor: Editor, input: EditOpInput, asSuggestion: boolean): string {
+/** What happened, for the room. `ok: false` means nothing changed. */
+export interface EditResult {
+  ok: boolean;
+  text: string;
+}
+
+/** Grow a text range to whole top-level blocks when it starts and ends on block edges. */
+function blockRange(doc: PMNode, from: number, to: number): { from: number; to: number; spansSlides: boolean } {
+  const $from = doc.resolve(from);
+  const $to = doc.resolve(to);
+  let a = from;
+  let b = to;
+  if ($from.depth >= 1 && $from.parentOffset === 0) a = $from.before(1);
+  if ($to.depth >= 1 && $to.parentOffset === $to.parent.content.size) b = $to.after(1);
+  let spansSlides = false;
+  doc.nodesBetween(a, b, (node) => {
+    if (node.type.name === "horizontalRule") spansSlides = true;
+    return !spansSlides;
+  });
+  return { from: a, to: b, spansSlides };
+}
+
+export function applyEditOp(editor: Editor, input: EditOpInput, asSuggestion: boolean, opts: { slides?: boolean } = {}): EditResult {
   const op = (input.operation ?? "append").toLowerCase();
-  const newText = input.new_text ?? "";
+  const newText = opts.slides ? normalizeSlidesMarkdown(input.new_text ?? "") : input.new_text ?? "";
   const sid = newSid();
   const { state } = editor;
   const tr = state.tr;
 
   if (op === "replace") {
-    const range = findTextRange(state.doc, input.find_text ?? "");
-    if (!range) return `couldn't find "${truncate(input.find_text ?? "", 60)}" to replace`;
+    const found = findTextRange(state.doc, input.find_text ?? "");
+    if (!found) return { ok: false, text: `couldn't find "${truncate(input.find_text ?? "", 80)}" to replace, so nothing changed` };
     const slice = markdownToSlice(editor, newText);
+    const blocks = slice.content.firstChild?.isBlock ? blockRange(state.doc, found.from, found.to) : null;
+    // Rewrites across slide breaks can't be tracked (the breaks aren't text), so
+    // they apply directly; the hub saved a version first, so it can be undone.
+    if (blocks?.spansSlides) {
+      tr.replace(blocks.from, blocks.to, slice);
+      editor.view.dispatch(tr);
+      return { ok: true, text: "rewrote several slides directly (the previous version is in version history)" };
+    }
+    const range = blocks ?? found;
     if (asSuggestion) {
       markDeletion(tr, range.from, range.to, LUKE, sid);
       insertSuggestedSlice(tr, tr.mapping.map(range.to), slice, LUKE, sid);
@@ -153,7 +213,8 @@ export function applyEditOp(editor: Editor, input: EditOpInput, asSuggestion: bo
     else tr.replace(pos, pos, blockSlice);
   }
   editor.view.dispatch(tr);
-  return op === "replace" ? "suggested a replacement" : `suggested an addition (${op})`;
+  const verb = asSuggestion ? "suggested" : "made";
+  return { ok: true, text: op === "replace" ? `${verb} a replacement` : `${verb} an addition (${op === "prepend" ? "at the top" : "at the end"})` };
 }
 
 export function applyCommentOp(editor: Editor, input: EditOpInput): boolean {

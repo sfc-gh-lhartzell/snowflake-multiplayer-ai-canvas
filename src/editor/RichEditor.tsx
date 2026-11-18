@@ -15,7 +15,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import Image from "@tiptap/extension-image";
 import { yXmlFragmentToProsemirrorJSON } from "@tiptap/y-tiptap";
 import * as Y from "yjs";
-import { Bold, Italic, Link as LinkIcon, MessageSquarePlus, Sparkles, LoaderCircle, Wand2, LayoutGrid, MessagesSquare } from "lucide-react";
+import { Bold, Italic, Link as LinkIcon, MessageSquarePlus, Sparkles, LoaderCircle, Wand2, LayoutGrid, MessagesSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import type { SseYProvider, AiOp } from "@/lib/y-provider";
 import { fromB64 } from "@/lib/y-provider";
 import { apiFetch, apiJson } from "@/lib/client-api";
@@ -29,7 +29,8 @@ import { useComments } from "./useComments";
 import { DocHeader } from "./DocHeader";
 import { EditorToolbar } from "./EditorToolbar";
 import { ThreadsPanel } from "./ThreadsPanel";
-import { SlidesRail } from "./Slides";
+import { SlidesRail, splitSlides } from "./Slides";
+import { SlideFocus, slideIndexAtPos } from "./slide-focus";
 import { VersionsDialog } from "./VersionsDialog";
 import { SlashMenu, SLASH_ITEMS, type SlashItem } from "./SlashMenu";
 import type { DocMetaClient } from "@/components/workspace/types";
@@ -111,6 +112,25 @@ function RichEditorInner({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [html, setHtml] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+  // A slide is a fixed 16:9 page; flag content that no longer fits.
+  useEffect(() => {
+    if (!isSlides) return;
+    const body = stageRef.current?.querySelector<HTMLElement>(".slide-body");
+    const pm = body?.querySelector<HTMLElement>(".ProseMirror");
+    if (!body || !pm) return;
+    const check = () => {
+      const cs = getComputedStyle(body);
+      const room = body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      setOverflowing(pm.offsetHeight > room + 2);
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(pm);
+    ro.observe(body);
+    return () => ro.disconnect();
+  }, [isSlides, html, activeSlide]);
   const [aiBusy, setAiBusy] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [askText, setAskText] = useState("");
@@ -149,6 +169,7 @@ function RichEditorInner({
         SuggestMode,
         Collaboration.configure({ document: ydoc, field: "content" }),
         CollaborationCaret.configure({ provider, user }),
+        ...(isSlides ? [SlideFocus] : []),
       ],
       editorProps: {
         attributes: { class: "focus:outline-none", spellcheck: "true" },
@@ -234,6 +255,7 @@ function RichEditorInner({
 
   // ----- seed + Luke's queued edits ----------------------------------------
   const processing = useRef(false);
+  const openedRef = useRef(false);
   useEffect(() => {
     if (!editor || !pending.current.synced || processing.current) return;
     processing.current = true;
@@ -247,17 +269,35 @@ function RichEditorInner({
             editor.commands.setContent(markdownToHtml(md));
           }
         }
+        // Decks open on their first slide.
+        if (isSlides && !openedRef.current) {
+          openedRef.current = true;
+          editor.commands.setTextSelection(1);
+          setActiveSlide(0);
+        }
         while (pending.current.ops.length) {
           const op = pending.current.ops.shift()!;
           const r = await provider.claim("op", op.opId);
           if (!r.granted) continue;
           if (op.tool === "edit_document") {
-            const what = applyEditOp(editor, op.input, lukeSuggestsRef.current);
-            onNotice(`Luke ${what} in “${doc.title}”.`);
-            setTab("suggestions");
-            setRightPane("threads");
+            let result: { ok: boolean; text: string };
+            try {
+              result = applyEditOp(editor, op.input, lukeSuggestsRef.current, { slides: isSlides });
+            } catch (err) {
+              result = { ok: false, text: `hit an error applying the edit (${(err as Error).message})` };
+            }
+            void provider.report(op.opId, result.ok, result.text);
+            if (result.ok) {
+              if (lukeSuggestsRef.current) {
+                setTab("suggestions");
+                setRightPane("threads");
+              }
+            } else {
+              onNotice(`Luke ${result.text} in “${doc.title}”.`);
+            }
           } else if (op.tool === "comment_on_document") {
-            applyCommentOp(editor, op.input);
+            const anchored = applyCommentOp(editor, op.input);
+            void provider.report(op.opId, true, anchored ? "commented" : "commented (on the whole doc; the quoted text wasn't found)");
             setTab("comments");
             setRightPane("threads");
           }
@@ -430,6 +470,7 @@ function RichEditorInner({
 
   if (!editor) return null;
 
+  const slideCount = isSlides ? splitSlides(html).length : 0;
   const slashItems = slash ? filterSlash(slash.query, isSlides) : [];
 
   return (
@@ -473,15 +514,52 @@ function RichEditorInner({
           onComment={startComment}
         />
         <div className="editor-scroll scroll-pane relative min-h-0 flex-1 overflow-y-auto px-6 pb-24 pt-5">
+          {isSlides ? (
+            <div className="mx-auto w-full max-w-[880px]">
+              <div className="mb-2 flex items-center justify-between px-1 text-[11px] font-bold tracking-wide text-[color:var(--color-text-muted)]">
+                <span className="inline-flex items-center gap-1.5">
+                  <button type="button" aria-label="Previous slide" disabled={activeSlide === 0} onClick={() => jumpToSlide(activeSlide - 1)} className="neu-ghost inline-flex h-6 w-6 items-center justify-center disabled:opacity-30">
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  SLIDE {activeSlide + 1} OF {slideCount}
+                  <button type="button" aria-label="Next slide" disabled={activeSlide >= slideCount - 1} onClick={() => jumpToSlide(activeSlide + 1)} className="neu-ghost inline-flex h-6 w-6 items-center justify-center disabled:opacity-30">
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+                {overflowing ? (
+                  <span className="rounded-full bg-[color:var(--color-danger-subtle,rgba(229,72,77,0.12))] px-2 py-0.5 text-[color:var(--color-danger-text)]">
+                    Too much for one slide: trim it or add a new slide
+                  </span>
+                ) : null}
+              </div>
+              <div
+                ref={stageRef}
+                className={cn(
+                  "slide-frame slides-editor canvas-editor cursor-text",
+                  overflowing && "outline outline-2 outline-offset-2 outline-[color:var(--color-danger-text)]",
+                  suggesting && !overflowing && "outline outline-2 outline-offset-4 outline-[color:rgba(31,157,85,0.35)]"
+                )}
+                onMouseDown={(e) => {
+                  // Clicks in the frame's padding land in the slide.
+                  if (e.target === e.currentTarget) {
+                    e.preventDefault();
+                    editor.commands.focus();
+                  }
+                }}
+              >
+                <EditorContent editor={editor} className="slide-body" />
+              </div>
+            </div>
+          ) : (
           <div
             className={cn(
               "neu-raised canvas-editor mx-auto w-full max-w-[820px] rounded-[26px] px-[clamp(24px,5vw,64px)] py-12",
-              isSlides && "slides-editor",
               suggesting && "outline outline-2 outline-offset-4 outline-[color:rgba(31,157,85,0.35)]"
             )}
           >
             <EditorContent editor={editor} />
           </div>
+          )}
           {slash && slashItems.length ? (
             <SlashMenu items={slashItems} index={slashIndex} top={slash.top} left={slash.left} onPick={(it) => pickSlashRef.current(it)} onHover={setSlashIndex} />
           ) : null}
@@ -618,14 +696,7 @@ function filterSlash(query: string, isSlides: boolean): SlashItem[] {
 }
 
 function slideIndexAt(e: Editor): number {
-  const pos = e.state.selection.from;
-  let n = 0;
-  e.state.doc.descendants((node, p) => {
-    if (p >= pos) return false;
-    if (node.type.name === "horizontalRule") n += 1;
-    return true;
-  });
-  return n;
+  return slideIndexAtPos(e.state.doc, e.state.selection.from);
 }
 
 function BubbleBtn({ label, active, onClick, children }: { label: string; active?: boolean; onClick: () => void; children: React.ReactNode }) {

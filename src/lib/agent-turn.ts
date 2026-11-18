@@ -201,7 +201,7 @@ async function applyTool(canvasId: string, user: string, ev: AgentEvent): Promis
         type: "doc.ai_op",
         canvasId,
         by: AGENT_NAME,
-        payload: { docId: doc.docId, title: doc.title, tool: ev.name, opId: toolUseId },
+        payload: { docId: doc.docId, title: doc.title, kind: doc.kind, doc, tool: ev.name, opId: toolUseId, requestedBy: user },
         at: Date.now(),
       });
       return;
